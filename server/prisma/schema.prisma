@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AppState {
+  key       String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AppUser {
+  id            String                   @id
+  email         String                   @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          String
+  googleSubject String?                  @unique
+  orgId         String?
+  memberId      String?
+  createdAt     DateTime                 @default(now())
+  memberships   OrganisationMembership[]
+
+  @@index([orgId])
+}
+
+model EmailVerification {
+  id        String   @id
+  email     String   @unique
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([expiresAt])
+}
+
+model MembershipCapacityLock {
+  orgId     String   @id
+  updatedAt DateTime @updatedAt
+}
+
+model CampaignCapacityLock {
+  campaignId String   @id
+  updatedAt  DateTime @updatedAt
+}
+
+model CampaignParticipant {
+  id         String   @id
+  campaignId String
+  memberId   String
+  status     String
+  joinedAt   DateTime @default(now())
+
+  @@unique([campaignId, memberId])
+  @@index([campaignId, status])
+  @@index([memberId])
+}
+
+model CampaignSubscription {
+  id                String    @id
+  campaignId        String    @unique
+  orgId             String
+  planCode          String
+  status            String
+  verifiedAt        DateTime?
+  startsAt          DateTime
+  expiresAt         DateTime
+  verifiedPaymentId String?
+  updatedAt         DateTime  @updatedAt
+
+  @@index([orgId, status, expiresAt])
+}
+
+model OrganisationMembership {
+  id       String   @id
+  orgId    String
+  userId   String
+  memberId String
+  name     String
+  email    String
+  phone    String
+  role     String
+  status   String
+  joinedAt DateTime @default(now())
+  user     AppUser  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([orgId, userId])
+  @@unique([orgId, memberId])
+  @@index([orgId, status])
+}
+
+model OrganisationInvitation {
+  id        String    @id
+  orgId     String
+  tokenHash String    @unique
+  email     String?
+  createdBy String
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  @@index([orgId, expiresAt])
+}
+
+model OrganisationSubscription {
+  id                String    @id
+  orgId             String    @unique
+  planCode          String
+  status            String
+  verifiedAt        DateTime?
+  startsAt          DateTime
+  expiresAt         DateTime
+  verifiedPaymentId String?
+  updatedAt         DateTime  @updatedAt
+
+  @@index([status, expiresAt])
+}
+
+model SubscriptionPayment {
+  id                String    @id
+  orgId             String
+  campaignId        String?
+  planCode          String
+  amount            Int
+  phone             String
+  status            String
+  paymentMethod     String    @default("MPESA")
+  paymentReference  String?   @unique
+  verifiedBy        String?
+  checkoutRequestId String?   @unique
+  merchantRequestId String?
+  receipt           String?   @unique
+  createdAt         DateTime  @default(now())
+  verifiedAt        DateTime?
+  payload           Json?
+
+  @@index([orgId, status, createdAt])
+}
+
+model MembershipAudit {
+  id        String   @id
+  orgId     String
+  actorId   String?
+  action    String
+  targetId  String?
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+}

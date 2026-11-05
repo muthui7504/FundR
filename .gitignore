@@ -1,0 +1,15 @@
+node_modules/
+**/node_modules/
+
+**/.env
+**/.env.*
+!**/.env.example
+
+client/.output/
+client/.tanstack/
+client/.nitro/
+client/.wrangler/
+client/dist/
+
+server/uploads/
+*.log

@@ -1,0 +1,35 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail \"npm run api:dev\" \"npm run client:dev\"",
+    "client:dev": "npm --prefix ../client run dev",
+    "build": "npm --prefix ../client run build",
+    "test": "tsx --test src/membership-tiers.test.ts src/contribution-status.test.ts src/daraja-client.test.ts src/stripe-client.test.ts src/platform-payment.test.ts src/kenyan-phone.test.ts src/campaign-routes.test.ts src/organisation-permissions.test.ts src/auth-session.test.ts",
+    "api": "tsx src/server.ts",
+    "api:dev": "tsx watch src/server.ts",
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:push": "prisma db push --schema prisma/schema.prisma",
+    "test:integration": "tsx --test src/membership-postgres.integration.test.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "google-auth-library": "^11.3.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.14.4",
+    "nodemailer": "^10.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/nodemailer": "^8.0.2",
+    "concurrently": "^9.2.1",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5.8.3"
+  }
+}

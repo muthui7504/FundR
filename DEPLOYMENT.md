@@ -23,7 +23,7 @@ the connection string private; it is the `DATABASE_URL` for the API service.
 
 ## 3. Deploy the API on Render
 
-In Render, create a Blueprint from the private repository and select the root
+In Render, create a Blueprint from the GitHub repository and select the root
 `render.yaml`. Provide the requested environment values:
 
 - `DATABASE_URL`: Neon pooled PostgreSQL connection string.

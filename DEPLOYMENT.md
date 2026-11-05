@@ -5,11 +5,11 @@ client, Render for the Express API, and Neon for PostgreSQL. Free services can
 sleep, restart, or have usage limits; this setup is not intended for live
 fundraising.
 
-## 1. Put the source in a private GitHub repository
+## 1. Put the source in GitHub
 
-Create a **private** repository and push the project root (the folder containing
-`client`, `server`, `render.yaml`, and this file). Before staging files, run
-`git status --short` and confirm no `.env` files, uploads, or `node_modules`
+This project is currently in a **public** GitHub repository. The project root
+contains `client`, `server`, `render.yaml`, and this file. Before staging files,
+run `git status --short` and confirm no `.env` files, uploads, or `node_modules`
 appear. The root `.gitignore` excludes these.
 
 Do not send hosting credentials, database URLs, or payment secrets in chat or

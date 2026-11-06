@@ -7,7 +7,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "deploy": "npm run build && wrangler deploy --config .output/server/wrangler.json --keep-vars",
+    "deploy": "npm run build && wrangler deploy --config .output/server/wrangler.json --keep-vars --var API_ORIGIN:https://fundraise-api-pni1.onrender.com",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",

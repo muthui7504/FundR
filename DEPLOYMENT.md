@@ -54,8 +54,10 @@ the Render API origin only (scheme and hostname, no path), for example
 The Worker proxies same-origin `/api` requests to the API, preserving the
 HTTP-only session cookie without relying on third-party cookies. `VITE_API_BASE_URL`
 can remain unset because the client defaults to `/api`. Set
-`VITE_GOOGLE_CLIENT_ID` only if Google member sign-in is enabled, and configure
-that client ID's allowed origin in Google Cloud.
+`VITE_GOOGLE_CLIENT_ID` as a Cloudflare build variable (not only a runtime
+variable) if Google member sign-in is enabled, and configure that client ID's
+allowed origin in Google Cloud. Changing this variable requires a new client
+build before it is available in the login bundle.
 
 ## Limitations to address before production
 

@@ -33,6 +33,9 @@ export async function sendEmailVerificationCode(email: string, name: string, cod
     signal: AbortSignal.timeout(15_000),
   });
 
-  if (!response.ok)
+  if (!response.ok) {
+    if (response.status === 401)
+      console.error(`Brevo API key was rejected (runtime key length: ${apiKey.length}).`);
     throw new Error(`Brevo email API request failed with status ${response.status}.`);
+  }
 }

@@ -6,8 +6,9 @@ used by this runtime.
 
 ## Setup
 
-1. Copy `.env.example` to `.env` and set `DATABASE_URL` to the existing PostgreSQL
-   database. Do not configure a second database.
+1. Copy `.env.example` to `.env` and set `DATABASE_URL` to the PostgreSQL
+   connection used by the app. For Neon, use the direct (non-pooled) URL because
+   this API uses Prisma's default client and runs as a long-lived Node service.
 2. Install dependencies with `npm install`.
 3. Generate the Prisma client and apply only pending additive migrations:
 

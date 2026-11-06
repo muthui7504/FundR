@@ -18,15 +18,17 @@ variable settings.
 
 ## 2. Create the Neon database
 
-Create a PostgreSQL project on Neon and copy its pooled connection string. Keep
-the connection string private; it is the `DATABASE_URL` for the API service.
+Create a PostgreSQL project on Neon. In Neon’s **Connect** dialog, select the
+direct (non-pooled) connection string. The Render API is a long-running Node
+service and uses this URL for both API queries and Prisma migrations. Keep it
+private and enter it only in Render’s environment settings.
 
 ## 3. Deploy the API on Render
 
 In Render, create a Blueprint from the GitHub repository and select the root
 `render.yaml`. Provide the requested environment values:
 
-- `DATABASE_URL`: Neon pooled PostgreSQL connection string.
+- `DATABASE_URL`: Neon direct PostgreSQL connection string (pooling disabled).
 - `MPESA_CREDENTIALS_ENCRYPTION_KEY`: generate a new persistent key locally
   with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 - `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`: SMTP credentials for

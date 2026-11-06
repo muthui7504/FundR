@@ -51,7 +51,38 @@ async function proxyApiRequest(request: Request, env: unknown) {
     );
   const requestUrl = new URL(request.url);
   const target = new URL(`${requestUrl.pathname}${requestUrl.search}`, apiOrigin);
-  return fetch(new Request(target, request));
+  const outbound = new Request(target, request);
+  const canRetry =
+    request.method === "GET" ||
+    request.method === "HEAD" ||
+    requestUrl.pathname === "/api/auth/login" ||
+    requestUrl.pathname === "/api/auth/google";
+  const attempts = canRetry ? 3 : 1;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const response = await fetch(outbound.clone());
+      if (
+        attempt < attempts - 1 &&
+        (response.status === 502 || response.status === 503 || response.status === 504)
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+        continue;
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+        continue;
+      }
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("The API request could not be completed.");
 }
 
 async function getServerEntry(): Promise<ServerEntry> {

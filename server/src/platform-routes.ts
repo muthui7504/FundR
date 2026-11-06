@@ -33,39 +33,11 @@ import {
 import { verifyDarajaCredentials } from "./daraja-client";
 import type { DarajaCredentials } from "./daraja-client";
 import { verifyStripeSecretKey } from "./stripe-client";
-import bcrypt from "bcryptjs";
-import { randomUUID } from "node:crypto";
 
 export async function handlePlatformRoutes(
   context: ApiRouteContext,
 ): Promise<Response | undefined> {
   const { request, parts, method } = context;
-
-  if (method === "POST" && parts[0] === "bootstrap" && parts[1] === "platform-admin") {
-    const secret = process.env.PLATFORM_ADMIN_BOOTSTRAP_SECRET;
-    if (!secret || request.headers.get("x-bootstrap-secret") !== secret)
-      return error("Not found.", 404);
-    if (!databaseEnabled) return error("Database persistence is not configured.", 503);
-    const input = await body(request);
-    const name = stringValue(input.name);
-    const email = stringValue(input.email).toLowerCase();
-    const password = stringValue(input.password);
-    if (name.length < 2 || !email.includes("@") || !isStrongPassword(password))
-      return error(`Name, valid email, and ${strongPasswordMessage}`);
-    if (await prisma.appUser.findUnique({ where: { email } }))
-      return error("An account with that email already exists.", 409);
-    const [firstName, ...lastNameParts] = name.split(/\s+/);
-    const user: DemoUser = {
-      id: randomUUID(),
-      email,
-      firstName,
-      lastName: lastNameParts.join(" "),
-      role: "PLATFORM_ADMIN",
-      password: await bcrypt.hash(password, 12),
-    };
-    await registerPlatformAdministrator(user);
-    return json({ success: true, email, role: user.role }, 201);
-  }
 
   if (
     parts[0] === "platform" &&

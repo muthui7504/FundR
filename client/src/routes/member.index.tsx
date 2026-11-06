@@ -9,6 +9,7 @@ import { CountBarChart } from "@/components/charts";
 import { profileRaised, useDemo } from "@/context/DemoStore";
 import { formatDate, formatKES, outstandingPledges, pct, supporterLabel } from "@/utils/format";
 import { meta } from "@/utils/meta";
+import { publicAppUrl } from "@/utils/public-url";
 import type { FundraisingProfile } from "@/types";
 
 export const Route = createFileRoute("/member/")({
@@ -28,7 +29,7 @@ function Overview() {
   const months = ["Jun", "Jul", "Aug", "Sep", "Oct"];
   const series = months.map((m, i) => ({ month: m, count: recentCompletedContribs.filter((c) => new Date(c.createdAt).getMonth() === 5 + i).length }));
   const pageUrl = (page: FundraisingProfile) =>
-    `${window.location.origin}/fundraiser/${page.slug}`;
+    publicAppUrl(`/fundraiser/${page.slug}`);
   const copyPageLink = async (page: FundraisingProfile) => {
     try {
       await navigator.clipboard.writeText(pageUrl(page));

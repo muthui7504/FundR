@@ -15,6 +15,7 @@ import { PledgeForm } from "@/components/public-fundraising/PledgeForm";
 import { ApiError, api } from "@/services/api";
 import type { PublicFundraisingProfile } from "@/types";
 import { formatDate, formatKES, pct, supporterLabel } from "@/utils/format";
+import { publicAppUrl } from "@/utils/public-url";
 import { cn } from "@/lib/utils";
 import { SAMPLE_FUNDRAISING_SLUG, sampleFundraisingPage } from "@/data/sample-fundraising-page";
 
@@ -142,7 +143,7 @@ function FundraiserPage() {
   const url =
     typeof window !== "undefined"
       ? window.location.href
-      : `https://fundraise.co.ke/fundraiser/${p.slug}`;
+      : publicAppUrl(`/fundraiser/${p.slug}`);
   return (
     <div className="min-h-screen bg-background pb-24">
       <PublicHeader />

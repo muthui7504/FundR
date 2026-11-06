@@ -8,6 +8,7 @@ import { EmptyState, PageHeader, Panel, ProgressBar, StatusBadge } from "@/compo
 import { profileRaised, useDemo } from "@/context/DemoStore";
 import { formatKES, pct } from "@/utils/format";
 import { meta } from "@/utils/meta";
+import { publicAppUrl } from "@/utils/public-url";
 import type { FundraisingProfile } from "@/types";
 
 export const Route = createFileRoute("/member/fundraising-pages/")({
@@ -23,7 +24,7 @@ function Pages() {
       campaigns.some((campaign) => campaign.id === p.campaignId && campaign.status === "ACTIVE"),
   );
   const [share, setShare] = useState<FundraisingProfile | null>(null);
-  const url = (p: FundraisingProfile) => `https://fundraise.co.ke/fundraiser/${p.slug}`;
+  const url = (p: FundraisingProfile) => publicAppUrl(`/fundraiser/${p.slug}`);
   return (
     <>
       <PageHeader title="My fundraising pages" description="One page per campaign you've joined." actions={<Button asChild><Link to="/member/fundraising-pages/create"><Plus className="h-4 w-4" />Create page</Link></Button>} />

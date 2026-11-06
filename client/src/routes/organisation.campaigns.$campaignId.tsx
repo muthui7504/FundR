@@ -47,6 +47,7 @@ import {
   pct,
   supporterLabel,
 } from "@/utils/format";
+import { publicAppUrl } from "@/utils/public-url";
 import { meta } from "@/utils/meta";
 import type { CampaignStatus, Contribution, ParticipantStatus } from "@/types";
 import { api, type CampaignMember } from "@/services/api";
@@ -387,7 +388,7 @@ function Details() {
     setCreatingShareLink(true);
     try {
       const invitation = await api.organisations.inviteMember();
-      const url = new URL(`/join/${encodeURIComponent(c.joinCode)}`, window.location.origin);
+      const url = new URL(publicAppUrl(`/join/${encodeURIComponent(c.joinCode)}`));
       url.searchParams.set("invite", invitation.token);
       const generatedLink = url.toString();
       setShareLink(generatedLink);

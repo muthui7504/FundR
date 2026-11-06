@@ -57,6 +57,10 @@ function environmentDarajaCredentials(): DarajaCredentials | undefined {
 function environmentSubscriptionCallbackUrl() {
   const configured =
     process.env.PLATFORM_DARAJA_CALLBACK_URL || process.env.DARAJA_CALLBACK_URL;
+  return configuredSubscriptionCallbackUrl(configured);
+}
+
+function configuredSubscriptionCallbackUrl(configured: string | undefined) {
   if (!configured) return "";
   const url = new URL(configured);
   url.pathname = "/api/subscriptions/mpesa/callback";
@@ -66,10 +70,10 @@ function environmentSubscriptionCallbackUrl() {
 }
 
 export function getPlatformMpesaCallbackUrl() {
-  return (
+  return configuredSubscriptionCallbackUrl(
     store.platformMpesaCallbackUrl ||
-    process.env.PLATFORM_DARAJA_CALLBACK_URL ||
-    environmentSubscriptionCallbackUrl()
+      process.env.PLATFORM_DARAJA_CALLBACK_URL ||
+      process.env.DARAJA_CALLBACK_URL,
   );
 }
 

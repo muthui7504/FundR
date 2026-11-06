@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { sessions, store } from "./api-context";
 import { handleMembershipRoutes } from "./membership-routes";
-import { getAvailableSubscriptionPaymentProviders } from "./platform-payment";
+import {
+  getAvailableSubscriptionPaymentProviders,
+  getPlatformMpesaCallbackUrl,
+} from "./platform-payment";
 
 test("available subscription methods include configured M-Pesa when Stripe is unavailable", () => {
   const env = {
@@ -34,6 +37,10 @@ test("available subscription methods include configured M-Pesa when Stripe is un
     store.platformMpesaCallbackUrl = undefined;
 
     assert.deepEqual(getAvailableSubscriptionPaymentProviders(), ["MPESA"]);
+    assert.equal(
+      getPlatformMpesaCallbackUrl(),
+      "https://payments.example.test/api/subscriptions/mpesa/callback",
+    );
   } finally {
     const restore = (name: string, value: string | undefined) => {
       if (value === undefined) delete process.env[name];

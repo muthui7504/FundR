@@ -11,12 +11,20 @@ type WorkerEnvironment = {
   API_ORIGIN?: string;
 };
 
+const DEFAULT_API_ORIGIN = "https://fundraise-api-pni1.onrender.com";
 let serverEntryPromise: Promise<ServerEntry> | undefined;
+let warnedAboutDefaultApiOrigin = false;
 
 function getApiOrigin(env: unknown) {
-  if (!env || typeof env !== "object" || !("API_ORIGIN" in env)) return undefined;
-  const value = (env as WorkerEnvironment).API_ORIGIN?.trim();
-  if (!value) return undefined;
+  const configuredOrigin =
+    env && typeof env === "object" && "API_ORIGIN" in env
+      ? (env as WorkerEnvironment).API_ORIGIN?.trim()
+      : undefined;
+  const value = configuredOrigin || DEFAULT_API_ORIGIN;
+  if (!configuredOrigin && !warnedAboutDefaultApiOrigin) {
+    console.warn("API_ORIGIN is not set; using the configured Render API origin.");
+    warnedAboutDefaultApiOrigin = true;
+  }
   try {
     const url = new URL(value);
     if (

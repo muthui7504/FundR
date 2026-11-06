@@ -83,10 +83,10 @@ the feature.
 
 Password-based registration sends a six-digit email verification code before any
 account or membership is created. Codes expire after 10 minutes, allow five
-attempts, and can be resent after one minute. Configure `SMTP_HOST`, `SMTP_PORT`,
-`SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM` in the server `.env`.
-For Gmail, use `smtp.gmail.com`, port `587`, `SMTP_SECURE=false`, and an App
-Password (not the Gmail account password). Never commit SMTP credentials.
+attempts, and can be resent after one minute. Configure `BREVO_API_KEY` and the
+verified sender address in `SMTP_FROM` in the server `.env`. Email is sent
+through Brevo's HTTPS API, so it works on Render's free tier, which blocks
+outbound SMTP ports. Never commit API keys.
 
 Platform administrators can record a campaign subscription paid by cash, bank
 transfer, or another offline method from the organisation details dashboard.

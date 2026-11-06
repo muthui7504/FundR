@@ -31,9 +31,12 @@ In Render, create a Blueprint from the GitHub repository and select the root
 - `DATABASE_URL`: Neon direct PostgreSQL connection string (pooling disabled).
 - `MPESA_CREDENTIALS_ENCRYPTION_KEY`: generate a new persistent key locally
   with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
-- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`: SMTP credentials for
-  an email provider. Registration requires email verification, so account
-  creation will not work until SMTP is configured.
+- `BREVO_API_KEY`: a Brevo transactional email API key. Registration requires
+  email verification, so account creation will not work until this is set.
+- `SMTP_FROM`: an email address verified as a sender in Brevo.
+
+The API sends verification mail through Brevo's HTTPS API. Render's free tier
+blocks outbound SMTP ports, so SMTP credentials will not work there.
 
 The blueprint runs Prisma client generation and database migrations during
 build, starts the Express API, and checks `/health`. After deploy, copy the

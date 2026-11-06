@@ -77,6 +77,14 @@ export function getPlatformMpesaCallbackUrl() {
   );
 }
 
+export function getPlatformMpesaContributionCallbackUrl() {
+  const callbackUrl = getPlatformMpesaCallbackUrl();
+  if (!callbackUrl) return "";
+  const url = new URL(callbackUrl);
+  url.pathname = "/api/contributions/mpesa/callback";
+  return url.toString();
+}
+
 export function getPlatformPaymentSecrets(): PlatformPaymentSecrets {
   const saved = store.platformPaymentCredentialVault
     ? decryptSecretPayload<PlatformPaymentSecrets>(

@@ -1,6 +1,7 @@
 import { addAudit, authError, body, error, id, isOrgUser, json, numberValue, mpesaCredentials, publicUser, readCookies, requireUser, sessions, store, stringValue, userFromRequest, type ApiRouteContext, type DemoUser } from "./api-context";
 import type { AuditEvent, Campaign, Contribution, FundraisingProfile, Member, MpesaAccount, Organisation, Plan, Participant, Pledge, Subscription } from "./types";
 import { initiateStkPush, queryStkPush } from "./daraja-client";
+import { getPlatformMpesaContributionCallbackUrl } from "./platform-payment";
 
 const CONTRIBUTION_REQUEST_TIMEOUT_MS = 120_000;
 const STATUS_QUERY_INTERVAL_MS = 5_000;
@@ -121,7 +122,7 @@ if (method === "POST" && parts[1] === "stk-push") {
     status: "PENDING",
     createdAt: new Date().toISOString(),
   };
-  const callbackUrl = process.env.DARAJA_CALLBACK_URL;
+  const callbackUrl = getPlatformMpesaContributionCallbackUrl();
   if (!callbackUrl) return error("M-Pesa callback URL is not configured on the server.", 503);
   let checkoutRequestId: string;
   try {

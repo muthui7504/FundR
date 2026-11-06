@@ -50,6 +50,10 @@ function isBcryptHash(value: string) {
   return /^\$2[aby]\$/.test(value);
 }
 
+function canUseGoogleSignIn(role: DemoUser["role"]) {
+  return role === "MEMBER" || role === "ORGANISATION_ADMIN";
+}
+
 async function createPendingAccount(data: PendingRegistration): Promise<DemoUser> {
   if (data.invitationTokenHash) {
     return registerInvitedMember({
@@ -190,8 +194,8 @@ return json({ success: true, data: { user: publicUser(user) } }, 200, {
     if (!account) {
       const existing = await prisma.appUser.findUnique({ where: { email } });
       if (existing) {
-        if (existing.role !== "MEMBER")
-          return error("Google sign-in is currently available for member accounts only.", 403);
+        if (!canUseGoogleSignIn(existing.role as DemoUser["role"]))
+          return error("Google sign-in is available for members and existing organisation administrators.", 403);
         if (existing.googleSubject && existing.googleSubject !== payload.sub)
           return error("This account is linked to a different Google account.", 409);
         try {
@@ -235,9 +239,9 @@ return json({ success: true, data: { user: publicUser(user) } }, 200, {
     }
 
     if (!account)
-      return error("Unable to load the member account after Google sign-in.", 500);
-    if (account.role !== "MEMBER")
-      return error("Google sign-in is currently available for member accounts only.", 403);
+      return error("Unable to load the account after Google sign-in.", 500);
+    if (!canUseGoogleSignIn(account.role as DemoUser["role"]))
+      return error("Google sign-in is available for members and existing organisation administrators.", 403);
     const safeUser: DemoUser = {
       id: account.id,
       email: account.email,

@@ -164,7 +164,7 @@ function Login() {
         <div className="space-y-4 rounded-2xl border bg-muted/30 p-5 sm:p-6">
           <div className="flex items-center gap-3 text-xs font-semibold tracking-wide text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
-            <span>MEMBER SIGN IN</span>
+            <span>ACCOUNT SIGN IN</span>
             <span className="h-px flex-1 bg-border" />
           </div>
           {invite && (

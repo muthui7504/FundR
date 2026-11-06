@@ -43,8 +43,10 @@ service's HTTPS URL, for example `https://fundraise-api.onrender.com`.
 
 Create a Worker connected to the same GitHub repository. Set its root directory
 to `client`, build command to `npm ci && npm run build`, and deploy command to
-`npm run deploy`. Set the Worker variable `API_ORIGIN` to the Render API origin
-only (scheme and hostname, no path), for example
+`npm run deploy`. If entering the Wrangler command directly in Cloudflare, add
+`--keep-vars` so dashboard-configured runtime variables are preserved. Set
+`API_ORIGIN` as a production runtime variable (not a build variable) to the
+Render API origin only (scheme and hostname, no path), for example
 `https://fundraise-api.onrender.com`.
 
 The Worker proxies same-origin `/api` requests to the API, preserving the

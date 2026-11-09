@@ -497,6 +497,14 @@ export async function updateOrganisationMembership(
       include: { user: true },
     });
     if (!membership) throw new MembershipError("Member not found.", 404);
+    if (
+      membership.userId === actorId &&
+      (update.status === "SUSPENDED" || update.status === "REMOVED")
+    )
+      throw new MembershipError(
+        "You cannot suspend or remove your own administrator account.",
+        403,
+      );
     if (actorRole === "STAFF" && membership.role !== "MEMBER")
       throw new MembershipError(
         "Only an organisation administrator can manage staff or administrator accounts.",

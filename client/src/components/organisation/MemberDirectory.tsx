@@ -12,8 +12,8 @@ const STATUSES = ["ALL", "ACTIVE", "INVITED", "SUSPENDED"] as const;
 export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
   const { members, setMembers, user } = useDemo();
   const isAdmin = user?.role === "ORGANISATION_ADMIN";
-  const isCurrentAdmin = (member: Member) => {
-    if (staffOnly || user?.role !== "ORGANISATION_ADMIN") return false;
+  const isCurrentUser = (member: Member) => {
+    if (user?.role !== "ORGANISATION_ADMIN") return false;
     return (
       Boolean(user.memberId && member.id === user.memberId) ||
       Boolean(
@@ -26,7 +26,7 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
   const [act, setAct] = useState<{ m: Member; kind: "suspend" | "remove" | "restore" } | null>(null);
   const [inviteUrl, setInviteUrl] = useState("");
   const [inviting, setInviting] = useState(false);
-  const rows = members.filter((m) => !isCurrentAdmin(m) && m.status !== "REMOVED" && (!staffOnly || m.role !== "MEMBER") && (st === "ALL" || m.status === st) &&
+  const rows = members.filter((m) => (!isCurrentUser(m) || staffOnly) && m.status !== "REMOVED" && (!staffOnly || m.role !== "MEMBER") && (st === "ALL" || m.status === st) &&
     [m.name, m.email, m.phone].some((v) => v.toLowerCase().includes(q.toLowerCase())));
   const pg = usePaged(rows, 8);
   const setRole = async (id: string, role: MembershipRole) => {
@@ -59,8 +59,8 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
   const actions = (m: Member) => (
     <div className="flex flex-wrap gap-1">
       {isAdmin && !staffOnly && <select aria-label={`Role for ${m.name}`} className={inputCls + " h-8 w-28 text-xs"} value={m.role} onChange={(e) => setRole(m.id, e.target.value as MembershipRole)}><option>ADMIN</option><option>STAFF</option><option>MEMBER</option></select>}
-      {(isAdmin || m.role === "MEMBER") && (m.status === "SUSPENDED" ? <Button size="sm" variant="ghost" onClick={() => setAct({ m, kind: "restore" })}>Restore</Button> : <Button size="sm" variant="ghost" onClick={() => setAct({ m, kind: "suspend" })}>Suspend</Button>)}
-      {(isAdmin || m.role === "MEMBER") && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setAct({ m, kind: "remove" })}>Remove</Button>}
+      {!isCurrentUser(m) && (isAdmin || m.role === "MEMBER") && (m.status === "SUSPENDED" ? <Button size="sm" variant="ghost" onClick={() => setAct({ m, kind: "restore" })}>Restore</Button> : <Button size="sm" variant="ghost" onClick={() => setAct({ m, kind: "suspend" })}>Suspend</Button>)}
+      {!isCurrentUser(m) && (isAdmin || m.role === "MEMBER") && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setAct({ m, kind: "remove" })}>Remove</Button>}
     </div>
   );
   return (

@@ -207,6 +207,14 @@ test("PostgreSQL campaign limits, concurrency, invitations, and payment callback
     const appStateBefore = originalAppStateData;
     const permissionOrg = await seedOrganisation(0);
     const administratorMemberId = await seedAdministratorMembership(permissionOrg);
+    const administratorMembership = await prisma.organisationMembership.findUniqueOrThrow({
+      where: {
+        orgId_memberId: {
+          orgId: permissionOrg,
+          memberId: administratorMemberId,
+        },
+      },
+    });
     await assert.rejects(
       updateOrganisationMembership(
         permissionOrg,
@@ -218,6 +226,21 @@ test("PostgreSQL campaign limits, concurrency, invitations, and payment callback
       (cause: unknown) =>
         cause instanceof MembershipError && cause.status === 403,
     );
+    for (const status of ["SUSPENDED", "REMOVED"] as const) {
+      await assert.rejects(
+        updateOrganisationMembership(
+          permissionOrg,
+          administratorMemberId,
+          { status },
+          administratorMembership.userId,
+          "ADMIN",
+        ),
+        (cause: unknown) =>
+          cause instanceof MembershipError &&
+          cause.status === 403 &&
+          cause.message.includes("own administrator account"),
+      );
+    }
     assert.equal(
       (await prisma.organisationMembership.findUnique({
         where: {

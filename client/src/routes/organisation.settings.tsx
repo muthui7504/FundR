@@ -24,7 +24,6 @@ function Settings() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault(); const x: Record<string, string> = {};
     if (f.name.trim().length < 2) x.name = "Name is required.";
-    if (!/^[a-z0-9-]+$/.test(f.slug)) x.slug = "Lowercase letters, numbers and hyphens only.";
     if (!/^\S+@\S+\.\S+$/.test(f.email)) x.email = "Enter a valid email.";
     setEr(x); if (Object.keys(x).length) return;
     try {
@@ -48,7 +47,18 @@ function Settings() {
             <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary-soft text-primary"><Upload className="h-6 w-6" /></div>
             <div className="min-w-0"><p className="text-sm font-medium">Logo</p><input type="file" accept="image/*" aria-label="Upload logo" className="mt-1 block w-full min-w-0 max-w-full text-xs" /></div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">{input("name", "Organisation name")}{input("slug", "Slug")}</div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {input("name", "Organisation name")}
+            <Field label="Organisation URL slug" htmlFor="slug" hint="This identifier is managed by FundR and cannot be changed.">
+              <input
+                id="slug"
+                className={`${inputCls} cursor-not-allowed bg-muted text-muted-foreground`}
+                value={f.slug}
+                readOnly
+                aria-readonly="true"
+              />
+            </Field>
+          </div>
           <Field label="Organisation type" htmlFor="type"><select id="type" className={inputCls} value={f.type} onChange={s("type")}>{["Church", "NGO", "School", "Charity", "Welfare group", "Community organisation"].map((o) => <option key={o}>{o}</option>)}</select></Field>
           <Field label="Description" htmlFor="desc"><textarea id="desc" className={textareaCls} value={f.description} onChange={s("description")} /></Field>
           <div className="grid gap-4 sm:grid-cols-2">{input("email", "Contact email", "email")}{input("phone", "Contact phone")}</div>

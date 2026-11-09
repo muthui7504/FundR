@@ -41,6 +41,7 @@ function Overview() {
   const mine = campaigns.filter((campaign) => campaign?.orgId === org.id);
   const active = mine.filter((campaign) => campaign.status === "ACTIVE");
   const activeCampaignIds = active.map((campaign) => campaign.id);
+  const activeCampaignIdSet = new Set(activeCampaignIds);
   const activeCampaignKey = activeCampaignIds.join("|");
   const [campaignMemberships, setCampaignMemberships] = useState<
     Record<string, CampaignMembershipOverview>
@@ -88,12 +89,13 @@ function Overview() {
   }, [activeCampaignKey, membershipAttempt]);
   const raised = mine.reduce((total, campaign) => total + campaignRaised(campaign.id), 0);
   const target = mine.reduce((total, campaign) => total + campaign.target, 0);
+  const totalMembers = members.filter((member) => member.status === "ACTIVE").length;
   const activeParts = new Set(
     participants
       .filter(
         (participant) =>
           participant?.status === "ACTIVE" &&
-          mine.some((campaign) => campaign.id === participant.campaignId),
+          activeCampaignIdSet.has(participant.campaignId),
       )
       .map((participant) => participant.memberId),
   ).size;
@@ -149,8 +151,8 @@ function Overview() {
         />
         <StatCard
           label="Active campaign members"
-          value={String(activeParts)}
-          hint={`${activeParts} joined members`}
+          value={`${activeParts} / ${totalMembers}`}
+          hint="Members participating in active campaigns"
           icon={<Users className="h-5 w-5" />}
           tone="muted"
         />

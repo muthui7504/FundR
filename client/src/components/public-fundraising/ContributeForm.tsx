@@ -182,7 +182,7 @@ export function ContributeForm({ profileId, disabled, onDone, onState, onValue, 
       <Field label="Or enter a custom amount (KSh)" htmlFor="amt" error={er.amount}><input ref={amountRef} id="amt" type="number" inputMode="numeric" min={10} className={inputCls} value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="e.g. 750" /></Field>
       <Field label="M-Pesa phone number" htmlFor="ph" error={er.phone}><input ref={phoneRef} id="ph" inputMode="tel" className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" aria-invalid={!!er.phone} /></Field>
       <Field label="Your name (optional)" htmlFor="nm" hint="Leave blank to give anonymously."><input id="nm" className={inputCls} value={name} onChange={(e) => setName(e.target.value)} /></Field>
-      <p className="text-center text-xs text-muted-foreground">You'll get an M-Pesa prompt on your phone. Fundraise never asks for your PIN.</p>
+      <p className="text-center text-xs text-muted-foreground">You'll get an M-Pesa prompt on your phone. FundR never asks for your PIN.</p>
     </form>
   );
 }

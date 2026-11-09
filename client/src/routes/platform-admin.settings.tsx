@@ -9,7 +9,7 @@ import { meta } from "@/utils/meta";
 import { showSuccess } from "@/utils/notifications";
 
 export const Route = createFileRoute("/platform-admin/settings")({
-  head: () => meta("Platform settings", "Billing rules, trial length and sign-up controls for Fundraise."),
+  head: () => meta("Platform settings", "Billing rules, trial length and sign-up controls for FundR."),
   component: Settings,
 });
 

@@ -133,7 +133,7 @@ export async function initiateStkPush(
       PhoneNumber: phone,
       CallBackURL: callbackUrl,
       AccountReference: accountReference.slice(0, 12),
-      TransactionDesc: "Fundraise subscription",
+      TransactionDesc: "FundR subscription",
     },
   );
   const payload = (await response.json().catch(() => ({}))) as {

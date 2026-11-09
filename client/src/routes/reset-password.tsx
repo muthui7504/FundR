@@ -6,7 +6,7 @@ import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Field, inputCls } from "@/components/kit";
 
 export const Route = createFileRoute("/reset-password")({
-  head: () => ({ meta: [{ title: "Set a new password — Fundraise" }, { name: "description", content: "Choose a new password for your account." }, { property: "og:title", content: "Set a new password — Fundraise" }, { property: "og:description", content: "Choose a new Fundraise password." }] }),
+  head: () => ({ meta: [{ title: "Set a new password — FundR" }, { name: "description", content: "Choose a new password for your account." }, { property: "og:title", content: "Set a new password — FundR" }, { property: "og:description", content: "Choose a new FundR password." }] }),
   component: Reset,
 });
 

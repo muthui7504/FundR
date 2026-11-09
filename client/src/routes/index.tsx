@@ -13,9 +13,9 @@ import hero from "@/assets/hero.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Fundraise — Fundraising made simple for Kenyan organisations" },
+      { title: "FundR — Fundraising made simple for Kenyan organisations" },
       { name: "description", content: "Run campaigns, accept M-Pesa contributions, track pledges and empower members with personal fundraising pages." },
-      { property: "og:title", content: "Fundraise — Fundraising made simple" },
+      { property: "og:title", content: "FundR — Fundraising made simple" },
       { property: "og:description", content: "Campaigns, M-Pesa contributions and pledge tracking for churches, schools, NGOs and community groups in Kenya." },
     ],
   }),
@@ -108,7 +108,7 @@ function Home() {
       <section className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2">
         <div>
           <h2 className="text-3xl font-bold">Trust and transparency, built in.</h2>
-          <p className="mt-4 text-muted-foreground">Fundraise only counts M-Pesa contributions once they are verified. Pledges are tracked separately and never inflate your totals. Money goes straight to your organisation's own PayBill or Till — Fundraise never holds funds, and we never ask for an M-Pesa PIN.</p>
+          <p className="mt-4 text-muted-foreground">FundR only counts M-Pesa contributions once they are verified. Pledges are tracked separately and never inflate your totals. Money goes straight to your organisation's own PayBill or Till — FundR never holds funds, and we never ask for an M-Pesa PIN.</p>
         </div>
         <ul className="space-y-3">
           {["Verified contributions only in raised totals", "Pledges shown separately with due dates", "Payments go to your own M-Pesa account", "Full audit trail of every important action"].map((t) => (

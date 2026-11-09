@@ -62,7 +62,7 @@ export function ShareCampaignButton({
   };
 
   const whatsappUrl = link
-    ? `https://wa.me/?text=${encodeURIComponent(`Join ${campaignName} on Fundraise: ${link}`)}`
+    ? `https://wa.me/?text=${encodeURIComponent(`Join ${campaignName} on FundR: ${link}`)}`
     : "";
 
   return (

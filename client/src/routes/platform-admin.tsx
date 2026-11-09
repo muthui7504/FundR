@@ -23,7 +23,7 @@ const items = [
 function Layout() {
   return (
     <SessionGate>
-      <DashboardShell items={items} area="Platform admin" user={{ name: "Platform Admin", sub: "Fundraise staff" }} />
+      <DashboardShell items={items} area="Platform admin" user={{ name: "Platform Admin", sub: "FundR staff" }} />
     </SessionGate>
   );
 }

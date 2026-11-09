@@ -25,7 +25,7 @@ test("Brevo sends verification email through its HTTPS API", async () => {
     assert.equal(requestHeaders?.get("api-key"), "brevo-test-key");
     assert.deepEqual(requestBody?.sender, {
       email: "verified@example.test",
-      name: "Fundraise",
+      name: "FundR",
     });
     assert.deepEqual(requestBody?.to, [
       { email: "member@example.test", name: "Sam <Member>" },

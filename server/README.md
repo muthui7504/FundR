@@ -1,4 +1,4 @@
-# Fundraise API
+# FundR API
 
 The active API is the TanStack/Prisma runtime in this folder and uses PostgreSQL
 through Prisma. The MySQL SQL files and route modules are legacy and are not

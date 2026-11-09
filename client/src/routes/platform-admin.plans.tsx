@@ -11,7 +11,7 @@ import { meta } from "@/utils/meta";
 import { showSuccess } from "@/utils/notifications";
 
 export const Route = createFileRoute("/platform-admin/plans")({
-  head: () => meta("Subscription plans", "Create and manage Fundraise subscription plans."),
+  head: () => meta("Subscription plans", "Create and manage FundR subscription plans."),
   component: Plans,
 });
 

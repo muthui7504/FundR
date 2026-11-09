@@ -13,7 +13,7 @@ export const Route = createFileRoute("/platform-admin/payments")({
   head: () =>
     meta(
       "Payments & billing",
-      "Campaign subscriptions and recent M-Pesa contribution activity across Fundraise.",
+      "Campaign subscriptions and recent M-Pesa contribution activity across FundR.",
     ),
   component: Payments,
 });

@@ -16,10 +16,10 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "Log in — Fundraise" },
+      { title: "Log in — FundR" },
       {
         name: "description",
-        content: "Log in to your Fundraise account.",
+        content: "Log in to your FundR account.",
       },
     ],
   }),
@@ -189,7 +189,7 @@ function Login() {
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          New to Fundraise?{" "}
+          New to FundR?{" "}
           <Link to="/register" search={{ campaignCode, invite }} className="font-semibold text-primary underline-offset-4 hover:underline">
             Create an account
           </Link>

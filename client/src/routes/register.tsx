@@ -16,7 +16,7 @@ export const Route = createFileRoute("/register")({
     invite: typeof search.invite === "string" ? search.invite : undefined,
     campaignCode: typeof search.campaignCode === "string" ? search.campaignCode : undefined,
   }),
-  head: () => ({ meta: [{ title: "Create account — Fundraise" }, { name: "description", content: "Register your organisation or join as a member." }, { property: "og:title", content: "Create your Fundraise account" }, { property: "og:description", content: "Register your organisation or join as a fundraiser." }] }),
+  head: () => ({ meta: [{ title: "Create account — FundR" }, { name: "description", content: "Register your organisation or join as a member." }, { property: "og:title", content: "Create your FundR account" }, { property: "og:description", content: "Register your organisation or join as a fundraiser." }] }),
   component: Register,
 });
 

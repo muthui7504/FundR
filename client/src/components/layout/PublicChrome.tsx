@@ -50,7 +50,7 @@ export function PublicFooter() {
           <Link to="/register" search={{ campaignCode: undefined, invite: undefined }} className="block text-muted-foreground hover:text-foreground">Register organisation</Link>
         </div>
       </div>
-      <div className="border-t py-5 text-center text-xs text-muted-foreground">© 2026 Fundraise · Nairobi, Kenya</div>
+      <div className="border-t py-5 text-center text-xs text-muted-foreground">© 2026 FundR · Nairobi, Kenya</div>
     </footer>
   );
 }

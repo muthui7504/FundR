@@ -39,7 +39,7 @@ export const Route = createFileRoute("/fundraiser/$slug")({
   head: ({ params }) => {
     return {
       meta: [
-        { title: "Fundraising page — Fundraise" },
+        { title: "Fundraising page — FundR" },
         { name: "description", content: "Support this fundraiser with M-Pesa." },
       ],
     };

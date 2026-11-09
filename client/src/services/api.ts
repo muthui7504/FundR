@@ -1,5 +1,5 @@
 /**
- * Central API client for the existing Fundraise backend (Node/Express/Prisma).
+ * Central API client for the existing FundR backend (Node/Express/Prisma).
  * Configure VITE_API_BASE_URL in your frontend .env file.
  * Authentication relies on HTTP-only cookies (credentials: "include").
  * Tokens are never stored in localStorage.

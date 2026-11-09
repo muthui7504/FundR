@@ -8,7 +8,7 @@ import { meta } from "@/utils/meta";
 import { showSuccess } from "@/utils/notifications";
 
 export const Route = createFileRoute("/platform-admin/organisations")({
-  head: () => meta("Organisations", "Review, activate and suspend organisations on Fundraise."),
+  head: () => meta("Organisations", "Review, activate and suspend organisations on FundR."),
   component: Orgs,
 });
 
@@ -30,7 +30,7 @@ function Orgs() {
   };
   return (
     <>
-      <PageHeader title="Organisations" description="All organisations registered on Fundraise." />
+      <PageHeader title="Organisations" description="All organisations registered on FundR." />
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SearchInput value={q} onChange={setQ} placeholder="Search by name, city or type" />
         <FilterChips options={FILTERS} value={f} onChange={setF} />

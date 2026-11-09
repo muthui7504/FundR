@@ -177,7 +177,7 @@ function JoinCampaign() {
               ) : (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Sign in to join, or create an account if you’re new to Fundraise.
+                    Sign in to join, or create an account if you’re new to FundR.
                   </p>
                   <Button asChild className="w-full">
                     <Link to="/login" search={{ campaignCode: campaign.joinCode, invite }}>Log in to join</Link>

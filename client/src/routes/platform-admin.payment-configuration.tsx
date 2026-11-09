@@ -9,7 +9,7 @@ import { meta } from "@/utils/meta";
 
 export const Route = createFileRoute("/platform-admin/payment-configuration")({
   head: () =>
-    meta("Payment configuration", "Configure how campaign subscriptions are paid on Fundraise."),
+    meta("Payment configuration", "Configure how campaign subscriptions are paid on FundR."),
   component: PaymentConfiguration,
 });
 

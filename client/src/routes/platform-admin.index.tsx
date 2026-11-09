@@ -14,7 +14,7 @@ export const Route = createFileRoute("/platform-admin/")({
   head: () =>
     meta(
       "Platform overview",
-      "Organisations, campaigns, verified funds and billing health across Fundraise.",
+      "Organisations, campaigns, verified funds and billing health across FundR.",
     ),
   component: Overview,
 });
@@ -91,7 +91,7 @@ function Overview() {
 
   return (
     <>
-      <PageHeader title="Platform overview" description="Everything happening across Fundraise." />
+      <PageHeader title="Platform overview" description="Everything happening across FundR." />
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           label="Verified funds raised"

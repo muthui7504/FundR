@@ -38,5 +38,5 @@ const campaignCompletionInterval = setInterval(() => {
 campaignCompletionInterval.unref();
 
 app.listen(port, () => {
-  console.log(`Fundraise API listening on port ${port}`);
+  console.log(`FundR API listening on port ${port}`);
 });

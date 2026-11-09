@@ -24,11 +24,11 @@ export async function sendEmailVerificationCode(email: string, name: string, cod
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      sender: { email: from, name: "Fundraise" },
+      sender: { email: from, name: "FundR" },
       to: [{ email, name }],
-      subject: "Your Fundraise verification code",
-      textContent: `Hello ${name},\n\nYour Fundraise verification code is ${code}. It expires in 10 minutes. If you did not request this, you can ignore this email.`,
-      htmlContent: `<p>Hello ${safeName},</p><p>Your Fundraise verification code is:</p><p style="font-size:28px;font-weight:700;letter-spacing:8px">${code}</p><p>This code expires in 10 minutes. If you did not request this, you can ignore this email.</p>`,
+      subject: "Your FundR verification code",
+      textContent: `Hello ${name},\n\nYour FundR verification code is ${code}. It expires in 10 minutes. If you did not request this, you can ignore this email.`,
+      htmlContent: `<p>Hello ${safeName},</p><p>Your FundR verification code is:</p><p style="font-size:28px;font-weight:700;letter-spacing:8px">${code}</p><p>This code expires in 10 minutes. If you did not request this, you can ignore this email.</p>`,
     }),
     signal: AbortSignal.timeout(15_000),
   });

@@ -6,7 +6,7 @@ import { formatDate, formatKES, pct } from "@/utils/format";
 import { meta } from "@/utils/meta";
 
 export const Route = createFileRoute("/platform-admin/campaigns")({
-  head: () => meta("All campaigns", "Every campaign running on Fundraise, with verified totals."),
+  head: () => meta("All campaigns", "Every campaign running on FundR, with verified totals."),
   component: Campaigns,
 });
 

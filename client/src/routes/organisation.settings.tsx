@@ -52,10 +52,9 @@ function Settings() {
             <Field label="Organisation URL slug" htmlFor="slug" hint="This identifier is managed by FundR and cannot be changed.">
               <input
                 id="slug"
-                className={`${inputCls} cursor-not-allowed bg-muted text-muted-foreground`}
+                className={`${inputCls} cursor-not-allowed bg-muted text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100`}
                 value={f.slug}
-                readOnly
-                aria-readonly="true"
+                disabled
               />
             </Field>
           </div>

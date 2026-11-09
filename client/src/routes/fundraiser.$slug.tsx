@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, Copy, ImageIcon, MessageCircle, UserRound } from "lucide-react";
+import {
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  ImageIcon,
+  Maximize2,
+  MessageCircle,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +58,36 @@ function FundraiserPage() {
   const [formState, setFormState] = useState<PayState>("ready");
   const [giveValue, setGiveValue] = useState(500);
   const [campaignDetailsOpen, setCampaignDetailsOpen] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  const campaignImages = Array.from(
+    new Set([
+      ...(data?.campaign.imageUrls ?? []),
+      ...(data?.campaign.coverImageUrl ? [data.campaign.coverImageUrl] : []),
+    ]),
+  );
+  const movePhoto = (direction: -1 | 1) => {
+    if (selectedPhotoIndex === null || campaignImages.length < 2) return;
+    setSelectedPhotoIndex(
+      (selectedPhotoIndex + direction + campaignImages.length) % campaignImages.length,
+    );
+  };
+  useEffect(() => {
+    if (selectedPhotoIndex === null || campaignImages.length < 2) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft") {
+        setSelectedPhotoIndex((index) =>
+          index === null ? null : (index - 1 + campaignImages.length) % campaignImages.length,
+        );
+      }
+      if (event.key === "ArrowRight") {
+        setSelectedPhotoIndex((index) =>
+          index === null ? null : (index + 1) % campaignImages.length,
+        );
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedPhotoIndex, campaignImages.length]);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -143,9 +182,7 @@ function FundraiserPage() {
       </div>
     );
   const coverImage = p.coverImageUrl ?? c.coverImageUrl ?? null;
-  const campaignImages = Array.from(
-    new Set([...(c.imageUrls ?? []), ...(c.coverImageUrl ? [c.coverImageUrl] : [])]),
-  );
+  const showPhoto = (index: number) => setSelectedPhotoIndex(index);
   const m = data.member;
   const org = data.organisation;
   const done = data.contributions.filter((x) => x.status === "COMPLETED");
@@ -394,39 +431,112 @@ function FundraiserPage() {
         </div>
       )}
       <Dialog open={campaignDetailsOpen} onOpenChange={setCampaignDetailsOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{c.name}</DialogTitle>
-            <DialogDescription>
-              {c.shortDescription || "Campaign details and project photos"}
+        <DialogContent className="overflow-hidden border-0 bg-background p-0 shadow-2xl sm:max-w-3xl">
+          <div className="bg-gradient-to-br from-primary/15 via-primary/5 to-transparent px-5 pb-5 pt-7 sm:px-7">
+            <DialogHeader>
+              <div className="mb-3 grid size-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+                <ImageIcon className="size-5" aria-hidden="true" />
+              </div>
+              <DialogTitle className="font-display text-xl sm:text-2xl">{c.name}</DialogTitle>
+              <DialogDescription className="max-w-2xl text-sm leading-relaxed">
+                {c.shortDescription || "Discover the project and see its progress."}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="max-h-[calc(100dvh-12rem)] space-y-6 overflow-y-auto px-5 pb-6 sm:px-7">
+            <section aria-label="Campaign description" className="rounded-2xl border bg-card p-4 sm:p-5">
+              <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">
+                {c.description ||
+                  c.shortDescription ||
+                  "More information about this campaign will be shared by the organisation."}
+              </p>
+            </section>
+            <section aria-label="Project photos">
+              <div className="mb-3 flex items-end justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold">Project photos</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Tap any photo to view it full size.
+                  </p>
+                </div>
+                {campaignImages.length > 0 && (
+                  <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                    {campaignImages.length} {campaignImages.length === 1 ? "photo" : "photos"}
+                  </span>
+                )}
+              </div>
+              {campaignImages.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {campaignImages.map((image, index) => (
+                    <CampaignPhoto
+                      key={`${image}-${index}`}
+                      src={image}
+                      alt={`${c.name} project photo ${index + 1}`}
+                      onClick={() => showPhoto(index)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center rounded-2xl border border-dashed bg-muted/30 px-5 py-9 text-center">
+                  <span className="grid size-12 place-items-center rounded-2xl bg-background text-primary shadow-sm">
+                    <ImageIcon className="size-6" aria-hidden="true" />
+                  </span>
+                  <p className="mt-3 text-sm font-semibold">Project photos coming soon</p>
+                  <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">
+                    The organisation has not added campaign photos yet.
+                  </p>
+                </div>
+              )}
+            </section>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={selectedPhotoIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedPhotoIndex(null);
+        }}
+      >
+        <DialogContent className="flex h-[min(92dvh,900px)] max-h-[92dvh] w-[calc(100%-1rem)] max-w-6xl flex-col gap-3 border-white/10 bg-black/95 p-3 text-white sm:w-[calc(100%-2rem)] sm:p-5">
+          <DialogHeader className="shrink-0 pr-8 text-left">
+            <DialogTitle className="text-sm font-medium text-white">
+              {selectedPhotoIndex !== null
+                ? `${c.name} · Photo ${selectedPhotoIndex + 1} of ${campaignImages.length}`
+                : c.name}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-white/60">
+              Use the arrows or keyboard arrow keys to browse photos.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-5">
-            <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-              {c.description ||
-                c.shortDescription ||
-                "More information about this campaign will be shared by the organisation."}
-            </p>
-            {campaignImages.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {campaignImages.map((image, index) => (
-                  <CampaignPhoto
-                    key={`${image}-${index}`}
-                    src={image}
-                    alt={`${c.name} project photo ${index + 1}`}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center rounded-2xl border border-dashed bg-muted/30 px-5 py-8 text-center">
-                <ImageIcon className="size-8 text-muted-foreground" aria-hidden="true" />
-                <p className="mt-2 text-sm font-medium">Project photos coming soon</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  The organisation has not added campaign photos yet.
-                </p>
-              </div>
-            )}
-          </div>
+          {selectedPhotoIndex !== null && campaignImages[selectedPhotoIndex] && (
+            <div className="relative flex min-h-0 flex-1 items-center justify-center">
+              <img
+                src={campaignImages[selectedPhotoIndex]}
+                alt={`${c.name} project photo ${selectedPhotoIndex + 1}`}
+                className="max-h-full max-w-full rounded-lg object-contain"
+              />
+              {campaignImages.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous photo"
+                    onClick={() => movePhoto(-1)}
+                    className="absolute left-2 grid size-10 place-items-center rounded-full bg-black/60 text-white ring-1 ring-white/20 transition hover:bg-black/85 sm:left-4 sm:size-12"
+                  >
+                    <ChevronLeft className="size-6" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next photo"
+                    onClick={() => movePhoto(1)}
+                    className="absolute right-2 grid size-10 place-items-center rounded-full bg-black/60 text-white ring-1 ring-white/20 transition hover:bg-black/85 sm:right-4 sm:size-12"
+                  >
+                    <ChevronRight className="size-6" />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
       <PublicFooter />
@@ -434,7 +544,15 @@ function FundraiserPage() {
   );
 }
 
-function CampaignPhoto({ src, alt }: { src: string; alt: string }) {
+function CampaignPhoto({
+  src,
+  alt,
+  onClick,
+}: {
+  src: string;
+  alt: string;
+  onClick: () => void;
+}) {
   const [unavailable, setUnavailable] = useState(false);
   return unavailable ? (
     <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-xl border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
@@ -442,11 +560,22 @@ function CampaignPhoto({ src, alt }: { src: string; alt: string }) {
       Photo unavailable
     </div>
   ) : (
-    <img
-      src={src}
-      alt={alt}
-      className="aspect-[4/3] w-full rounded-xl border object-cover"
-      onError={() => setUnavailable(true)}
-    />
+    <button
+      type="button"
+      className="group relative block aspect-[4/3] w-full overflow-hidden rounded-xl border bg-muted text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      onClick={onClick}
+      aria-label={`View full-size image: ${alt}`}
+    >
+      <img
+        src={src}
+        alt={alt}
+        className="absolute inset-0 size-full object-cover transition duration-300 group-hover:scale-105"
+        onError={() => setUnavailable(true)}
+      />
+      <span className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-70 transition group-hover:opacity-100" />
+      <span className="absolute bottom-2 right-2 grid size-8 place-items-center rounded-full bg-black/55 text-white opacity-0 shadow transition group-hover:opacity-100 group-focus-visible:opacity-100">
+        <Maximize2 className="size-4" aria-hidden="true" />
+      </span>
+    </button>
   );
 }

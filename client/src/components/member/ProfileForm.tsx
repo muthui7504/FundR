@@ -3,10 +3,10 @@ import { Eye, ImageIcon, Loader2, Upload, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, ProgressBar, inputCls, textareaCls } from "@/components/kit";
 import type { Campaign, FundraisingProfile } from "@/types";
+import { useDemo } from "@/context/DemoStore";
 
 export type ProfileInput = Pick<FundraisingProfile, "campaignId" | "title" | "message" | "target" | "avatarUrl" | "coverImageUrl"> & {
   avatarImage?: string;
-  coverImage?: string;
 };
 
 function campaignDefaults(campaign: Campaign, memberName?: string): Partial<ProfileInput> {
@@ -15,7 +15,7 @@ function campaignDefaults(campaign: Campaign, memberName?: string): Partial<Prof
     title: `${memberName?.trim() ? `${memberName.trim()}'s` : "My"} ${campaign.name} Fundraising Page`,
     message: `I'm raising funds for ${campaign.name}. ${campaignDetails || "Please support this campaign and help us reach our goal."}`,
     target: campaign.target > 0 ? campaign.target : undefined,
-    coverImageUrl: campaign.coverImageUrl,
+    coverImageUrl: campaign.coverImageUrl ?? campaign.imageUrls?.[0],
   };
 }
 
@@ -61,6 +61,7 @@ export function ProfileForm({ eligible, initial, lockCampaign, memberName, showP
   memberName?: string; showPrefillNote?: boolean;
   onSubmit: (v: ProfileInput, draft: boolean) => void | Promise<void>; onCancel: () => void;
 }) {
+  const { org } = useDemo();
   const [v, setV] = useState<ProfileInput>(() => {
     const campaignId = initial?.campaignId ?? eligible[0]?.id ?? "";
     const selectedCampaign = eligible.find((campaign) => campaign.id === campaignId);
@@ -70,14 +71,14 @@ export function ProfileForm({ eligible, initial, lockCampaign, memberName, showP
       message: "",
       ...(selectedCampaign ? campaignDefaults(selectedCampaign, memberName) : {}),
       ...initial,
+      coverImageUrl:
+        org.logoUrl ?? selectedCampaign?.coverImageUrl ?? selectedCampaign?.imageUrls?.[0],
     };
   });
   const [er, setEr] = useState<Record<string, string>>({});
   const [preview, setPreview] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [coverImage, setCoverImage] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState("");
-  const [coverImageUrl, setCoverImageUrl] = useState("");
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (!profileImage) {
@@ -88,15 +89,6 @@ export function ProfileForm({ eligible, initial, lockCampaign, memberName, showP
     setProfileImageUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [profileImage, v.avatarUrl]);
-  useEffect(() => {
-    if (!coverImage) {
-      setCoverImageUrl(v.coverImageUrl ?? "");
-      return;
-    }
-    const url = URL.createObjectURL(coverImage);
-    setCoverImageUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [coverImage, v.coverImageUrl]);
   const fileAsDataUrl = (file: File) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -106,7 +98,7 @@ export function ProfileForm({ eligible, initial, lockCampaign, memberName, showP
     });
   const onImageSelected = (
     event: React.ChangeEvent<HTMLInputElement>,
-    field: "profileImage" | "coverImage",
+    field: "profileImage",
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -121,8 +113,7 @@ export function ProfileForm({ eligible, initial, lockCampaign, memberName, showP
       return;
     }
     setEr((errors) => ({ ...errors, [field]: "", images: "" }));
-    if (field === "profileImage") setProfileImage(file);
-    else setCoverImage(file);
+    setProfileImage(file);
   };
   const go = async (draft: boolean) => {
     if (busy) return;
@@ -138,7 +129,6 @@ export function ProfileForm({ eligible, initial, lockCampaign, memberName, showP
       await onSubmit({
         ...v,
         ...(profileImage ? { avatarImage: await fileAsDataUrl(profileImage) } : {}),
-        ...(coverImage ? { coverImage: await fileAsDataUrl(coverImage) } : {}),
       }, draft);
     } catch (cause) {
       setEr((errors) => ({
@@ -161,8 +151,11 @@ export function ProfileForm({ eligible, initial, lockCampaign, memberName, showP
               ...current,
               ...(selectedCampaign ? campaignDefaults(selectedCampaign, memberName) : {}),
               campaignId,
+              coverImageUrl:
+                org.logoUrl ??
+                selectedCampaign?.coverImageUrl ??
+                selectedCampaign?.imageUrls?.[0],
             }));
-            setCoverImage(null);
             setEr((errors) => ({ ...errors, campaignId: "", title: "", message: "", target: "" }));
           }}>
             {eligible.length === 0 && <option value="">No eligible campaigns</option>}
@@ -173,17 +166,11 @@ export function ProfileForm({ eligible, initial, lockCampaign, memberName, showP
         <Field label="Page title" htmlFor="pt" error={er.title}><input id="pt" className={inputCls} value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} aria-invalid={!!er.title} /></Field>
         <Field label="Personal message" htmlFor="pm" error={er.message}><textarea id="pm" className={textareaCls} value={v.message} onChange={(e) => setV({ ...v, message: e.target.value })} aria-invalid={!!er.message} /></Field>
         <Field label="Personal target (KSh, optional)" htmlFor="ptg" error={er.target}><input id="ptg" type="number" min={1} className={inputCls} value={v.target ?? ""} onChange={(e) => setV({ ...v, target: e.target.value ? Number(e.target.value) : undefined })} /></Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Profile image</p>
-            <ImageUploadField id="pi" label="Profile image" file={profileImage} imageUrl={profileImageUrl} error={er.profileImage} recommendation="Choose profile image" onChange={(event) => onImageSelected(event, "profileImage")} />
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Cover image</p>
-            <ImageUploadField id="pco" label="Cover image" file={coverImage} imageUrl={coverImageUrl} error={er.coverImage} recommendation="Choose cover image" onChange={(event) => onImageSelected(event, "coverImage")} />
-          </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Profile image</p>
+          <ImageUploadField id="pi" label="Profile image" file={profileImage} imageUrl={profileImageUrl} error={er.profileImage} recommendation="Choose profile image" onChange={onImageSelected} />
         </div>
-        <p className="text-xs text-muted-foreground">Your images are saved with your fundraising page and shown to supporters.</p>
+        <p className="text-xs text-muted-foreground">Your profile image is shown alongside the organisation or campaign cover on your fundraising page.</p>
         {er.images && <p role="alert" className="text-xs text-destructive">{er.images}</p>}
         <div className="flex flex-col-reverse gap-2 border-t pt-5 sm:flex-row sm:justify-end">
           <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>Cancel</Button>
@@ -196,7 +183,7 @@ export function ProfileForm({ eligible, initial, lockCampaign, memberName, showP
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Preview</p>
         <div className="overflow-hidden rounded-2xl border bg-card shadow-card">
           <div className="relative grid h-24 place-items-center overflow-hidden bg-primary-soft text-primary">
-            {coverImageUrl ? <img src={coverImageUrl} alt="Selected cover preview" className="absolute inset-0 h-full w-full object-cover" /> : <ImageIcon className="h-6 w-6" />}
+            {v.coverImageUrl ? <img src={v.coverImageUrl} alt="Organisation or campaign cover preview" className="absolute inset-0 h-full w-full object-cover" /> : <ImageIcon className="h-6 w-6" />}
           </div>
           <div className="p-5">
             <div className="-mt-12 relative grid h-14 w-14 place-items-center overflow-hidden rounded-full border-4 border-card bg-muted">

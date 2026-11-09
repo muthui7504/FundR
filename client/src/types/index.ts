@@ -24,6 +24,7 @@ export interface Organisation {
   address: string;
   status: OrgStatus;
   createdAt: string;
+  logoUrl?: string;
 }
 export interface Member {
   id: string;

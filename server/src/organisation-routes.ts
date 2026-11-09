@@ -2,6 +2,7 @@ import { addAudit, authError, body, error, id, json, numberValue, publicUser, re
 import type { AuditEvent, Campaign, Contribution, FundraisingProfile, Member, MpesaAccount, Organisation, Plan, Participant, Pledge, Subscription } from "./types";
 import { databaseEnabled } from "./api-context";
 import { listOrganisationMemberships } from "./membership-service";
+import { ProfileImageError, saveProfileImage } from "./profile-image-storage";
 
 export async function handleOrganisationRoutes(context: ApiRouteContext): Promise<Response | undefined> {
   const { request, url, path, parts, method, setCookie } = context;
@@ -17,6 +18,15 @@ if (method === "PATCH" && parts.length === 2) {
   if (user.role !== "ORGANISATION_ADMIN")
     return error("Only organisation administrators can update organisation details.", 403);
   const input = await body(request);
+  if (input.logoImage !== undefined) {
+    try {
+      org.logoUrl = await saveProfileImage(input.logoImage);
+    } catch (cause) {
+      if (cause instanceof ProfileImageError) return error(cause.message, 400);
+      throw cause;
+    }
+  }
+  delete input.logoImage;
   Object.assign(org, {
     name: stringValue(input.name) || org.name,
     description: stringValue(input.description) || org.description,

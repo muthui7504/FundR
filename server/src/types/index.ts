@@ -11,7 +11,7 @@ export type OrgStatus = "ACTIVE" | "SUSPENDED";
 export interface Organisation {
   id: string; name: string; slug: string; type: string; description: string;
   email: string; phone: string; website: string; country: string; city: string; address: string;
-  status: OrgStatus; createdAt: string;
+  status: OrgStatus; createdAt: string; logoUrl?: string;
 }
 export interface Member {
   id: string; name: string; email: string; phone: string; role: MembershipRole;

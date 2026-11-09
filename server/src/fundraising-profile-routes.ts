@@ -69,6 +69,9 @@ if (method === "POST" && parts.length === 1) {
   const campaign = store.campaigns.find((item) => item.id === created.campaignId);
   if (!campaign || campaign.status !== "ACTIVE")
     return error("Fundraising pages can only be created for active campaigns.", 400);
+  const organisation = store.organisations.find((item) => item.id === campaign.orgId);
+  created.coverImageUrl =
+    organisation?.logoUrl || campaign.coverImageUrl || campaign.imageUrls?.[0];
   const participant = store.participants.find(
     (item) =>
       item.campaignId === campaign.id &&
@@ -87,8 +90,6 @@ if (method === "POST" && parts.length === 1) {
   try {
     if (input.avatarImage !== undefined)
       created.avatarUrl = await saveProfileImage(input.avatarImage);
-    if (input.coverImage !== undefined)
-      created.coverImageUrl = await saveProfileImage(input.coverImage);
   } catch (cause) {
     if (cause instanceof ProfileImageError) return error(cause.message, 400);
     throw cause;
@@ -101,11 +102,16 @@ if (method === "PATCH" && parts[1]) {
   const profile = store.profiles.find((item) => item.id === parts[1]);
   if (!profile || profile.memberId !== user.memberId) return error("Profile not found.", 404);
   const input = await body(request);
+  const campaign = store.campaigns.find((item) => item.id === profile.campaignId);
+  const organisation = campaign
+    ? store.organisations.find((item) => item.id === campaign.orgId)
+    : undefined;
+  profile.coverImageUrl = campaign
+    ? organisation?.logoUrl || campaign.coverImageUrl || campaign.imageUrls?.[0]
+    : undefined;
   try {
     if (input.avatarImage !== undefined)
       profile.avatarUrl = await saveProfileImage(input.avatarImage);
-    if (input.coverImage !== undefined)
-      profile.coverImageUrl = await saveProfileImage(input.coverImage);
   } catch (cause) {
     if (cause instanceof ProfileImageError) return error(cause.message, 400);
     throw cause;

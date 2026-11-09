@@ -183,7 +183,8 @@ function FundraiserPage() {
         </div>
       </div>
     );
-  const coverImage = p.coverImageUrl ?? c.coverImageUrl ?? null;
+  const coverImage =
+    data.organisation.logoUrl ?? c.coverImageUrl ?? c.imageUrls?.[0] ?? null;
   const showPhoto = (index: number) => setSelectedPhotoIndex(index);
   const m = data.member;
   const org = data.organisation;

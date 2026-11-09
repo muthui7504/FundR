@@ -177,7 +177,11 @@ export const api = {
         contributions: Contribution[];
       }>("/organisations/current/dashboard"),
 
-    update: (data: Partial<Organisation>) => patch<Organisation>("/organisations/current", data),
+    update: (data: Partial<Organisation>, logoImage?: string) =>
+      patch<Organisation>("/organisations/current", {
+        ...data,
+        ...(logoImage ? { logoImage } : {}),
+      }),
 
     members: () => get<Member[]>("/organisations/current/members"),
 

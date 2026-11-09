@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, Mail, MapPin, Upload } from "lucide-react";
+import { Building2, Mail, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, PageHeader, Panel, inputCls, textareaCls } from "@/components/kit";
@@ -21,6 +21,18 @@ function Settings() {
   const { org, setOrg } = useDemo();
   const [f, setF] = useState<Organisation>(org);
   const [er, setEr] = useState<Record<string, string>>({});
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState(org.logoUrl ?? "");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (!logoFile) {
+      setLogoPreview(f.logoUrl ?? "");
+      return;
+    }
+    const previewUrl = URL.createObjectURL(logoFile);
+    setLogoPreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [logoFile, f.logoUrl]);
   const s =
     (k: keyof Organisation) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -32,14 +44,44 @@ function Settings() {
     if (!/^\S+@\S+\.\S+$/.test(f.email)) x.email = "Enter a valid email.";
     setEr(x);
     if (Object.keys(x).length) return;
+    setSaving(true);
     try {
-      const updated = await api.organisations.update(f);
+      const logoImage = logoFile
+        ? await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () =>
+              typeof reader.result === "string"
+                ? resolve(reader.result)
+                : reject(new Error("Unable to read the logo image."));
+            reader.onerror = () => reject(new Error("Unable to read the logo image."));
+            reader.readAsDataURL(logoFile);
+          })
+        : undefined;
+      const updated = await api.organisations.update(f, logoImage);
       setOrg(updated);
       setF(updated);
+      setLogoFile(null);
       toast.success("Settings saved");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to save settings.");
+    } finally {
+      setSaving(false);
     }
+  };
+  const selectLogo = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Choose a JPEG, PNG, or WebP logo.");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Choose a logo smaller than 5 MB.");
+      event.target.value = "";
+      return;
+    }
+    setLogoFile(file);
   };
   const input = (k: keyof Organisation, label: string, type = "text") => (
     <Field label={label} htmlFor={k} error={er[k]}>
@@ -87,8 +129,12 @@ function Settings() {
           />
           <div className="space-y-5 p-5 sm:p-6">
             <div className="flex min-w-0 items-center gap-4 rounded-2xl border bg-muted/25 p-4">
-              <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary-soft text-primary">
-                <Upload className="size-6" />
+              <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-primary-soft text-primary">
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Organisation logo preview" className="size-full object-cover" />
+                ) : (
+                  <Building2 className="size-6" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold">Organisation logo</p>
@@ -97,10 +143,12 @@ function Settings() {
                 </p>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   aria-label="Upload logo"
                   className="mt-2 block w-full min-w-0 max-w-full text-xs"
+                  onChange={selectLogo}
                 />
+                <p className="mt-1 text-xs text-muted-foreground">JPEG, PNG, or WebP · up to 5 MB. This logo is used on member fundraising pages when available.</p>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -176,14 +224,15 @@ function Settings() {
               variant="ghost"
               onClick={() => {
                 setF(org);
+                setLogoFile(null);
                 setEr({});
               }}
             >
               Discard changes
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={saving}>
               <Building2 className="size-4" />
-              Save profile
+              {saving ? "Saving..." : "Save profile"}
             </Button>
           </div>
         </div>

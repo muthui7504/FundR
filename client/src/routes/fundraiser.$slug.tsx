@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, Copy, MessageCircle, UserRound } from "lucide-react";
+import { Building2, Copy, ImageIcon, MessageCircle, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { EmptyState, ErrorState, Panel, ProgressBar } from "@/components/kit";
 import { FundraiserPageSkeleton } from "@/components/loading-skeletons";
 import { PublicFooter, PublicHeader } from "@/components/layout/PublicChrome";
@@ -41,6 +48,7 @@ function FundraiserPage() {
   const [tab, setTab] = useState<"give" | "pledge">("give");
   const [formState, setFormState] = useState<PayState>("ready");
   const [giveValue, setGiveValue] = useState(500);
+  const [campaignDetailsOpen, setCampaignDetailsOpen] = useState(false);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -135,6 +143,9 @@ function FundraiserPage() {
       </div>
     );
   const coverImage = p.coverImageUrl ?? c.coverImageUrl ?? null;
+  const campaignImages = Array.from(
+    new Set([...(c.imageUrls ?? []), ...(c.coverImageUrl ? [c.coverImageUrl] : [])]),
+  );
   const m = data.member;
   const org = data.organisation;
   const done = data.contributions.filter((x) => x.status === "COMPLETED");
@@ -235,13 +246,9 @@ function FundraiserPage() {
             </Panel>
             <Panel className="p-6">
               <h2 className="font-semibold">About the organisation</h2>
-              {(c.description || c.shortDescription) && (
-                <div className="mt-4">
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                    {c.description || c.shortDescription}
-                  </p>
-                </div>
-              )}
+              <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                {c.description || c.shortDescription}
+              </p>
               <div className="mt-5 flex items-start gap-3 rounded-xl bg-muted p-4">
                 <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div className="text-sm">
@@ -256,6 +263,15 @@ function FundraiserPage() {
                 </div>
               </div>
             </Panel>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setCampaignDetailsOpen(true)}
+            >
+              <ImageIcon className="size-4" />
+              View photos / more details
+            </Button>
           </div>
           <div className="lg:col-span-2">
             <Panel className="space-y-5 p-6 lg:sticky lg:top-20">
@@ -376,7 +392,60 @@ function FundraiserPage() {
           </div>
         </div>
       )}
+      <Dialog open={campaignDetailsOpen} onOpenChange={setCampaignDetailsOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{c.name}</DialogTitle>
+            <DialogDescription>
+              {c.shortDescription || "Campaign details and project photos"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+              {c.description ||
+                c.shortDescription ||
+                "More information about this campaign will be shared by the organisation."}
+            </p>
+            {campaignImages.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {campaignImages.map((image, index) => (
+                  <CampaignPhoto
+                    key={`${image}-${index}`}
+                    src={image}
+                    alt={`${c.name} project photo ${index + 1}`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center rounded-2xl border border-dashed bg-muted/30 px-5 py-8 text-center">
+                <ImageIcon className="size-8 text-muted-foreground" aria-hidden="true" />
+                <p className="mt-2 text-sm font-medium">Project photos coming soon</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  The organisation has not added campaign photos yet.
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       <PublicFooter />
     </div>
+  );
+}
+
+function CampaignPhoto({ src, alt }: { src: string; alt: string }) {
+  const [unavailable, setUnavailable] = useState(false);
+  return unavailable ? (
+    <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-xl border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+      <ImageIcon className="size-6" aria-hidden="true" />
+      Photo unavailable
+    </div>
+  ) : (
+    <img
+      src={src}
+      alt={alt}
+      className="aspect-[4/3] w-full rounded-xl border object-cover"
+      onError={() => setUnavailable(true)}
+    />
   );
 }

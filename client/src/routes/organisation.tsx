@@ -1,5 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, LayoutDashboard, Megaphone, Smartphone, UserCog, Users } from "lucide-react";
+import {
+  Building2,
+  ChartNoAxesCombined,
+  LayoutDashboard,
+  Megaphone,
+  Smartphone,
+  UserCog,
+  Users,
+} from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { SessionGate } from "@/components/layout/SessionGate";
 import { requireAuth } from "@/lib/auth";
@@ -13,6 +21,7 @@ export const Route = createFileRoute("/organisation")({
 const items = [
   { to: "/organisation", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/organisation/campaigns", label: "Campaigns", icon: Megaphone },
+  { to: "/organisation/reports", label: "Reports", icon: ChartNoAxesCombined },
   { to: "/organisation/members", label: "Members", icon: Users },
   { to: "/organisation/staff", label: "Staff", icon: UserCog },
   { to: "/organisation/settings", label: "Organisation Settings", icon: Building2 },

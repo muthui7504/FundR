@@ -27,6 +27,7 @@ import { Route as MemberPledgesRouteImport } from './routes/member.pledges'
 import { Route as OrganisationIndexRouteImport } from './routes/organisation.index'
 import { Route as OrganisationMembersRouteImport } from './routes/organisation.members'
 import { Route as OrganisationMpesaRouteImport } from './routes/organisation.mpesa'
+import { Route as OrganisationReportsRouteImport } from './routes/organisation.reports'
 import { Route as OrganisationSettingsRouteImport } from './routes/organisation.settings'
 import { Route as OrganisationStaffRouteImport } from './routes/organisation.staff'
 import { Route as PlatformAdminIndexRouteImport } from './routes/platform-admin.index'
@@ -133,6 +134,11 @@ const OrganisationMembersRoute = OrganisationMembersRouteImport.update({
 const OrganisationMpesaRoute = OrganisationMpesaRouteImport.update({
   id: '/mpesa',
   path: '/mpesa',
+  getParentRoute: () => OrganisationRoute,
+} as any)
+const OrganisationReportsRoute = OrganisationReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => OrganisationRoute,
 } as any)
 const OrganisationSettingsRoute = OrganisationSettingsRouteImport.update({
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/member/pledges': typeof MemberPledgesRoute
   '/organisation/members': typeof OrganisationMembersRoute
   '/organisation/mpesa': typeof OrganisationMpesaRoute
+  '/organisation/reports': typeof OrganisationReportsRoute
   '/organisation/settings': typeof OrganisationSettingsRoute
   '/organisation/staff': typeof OrganisationStaffRoute
   '/platform-admin/accounts': typeof PlatformAdminAccountsRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/member/pledges': typeof MemberPledgesRoute
   '/organisation/members': typeof OrganisationMembersRoute
   '/organisation/mpesa': typeof OrganisationMpesaRoute
+  '/organisation/reports': typeof OrganisationReportsRoute
   '/organisation/settings': typeof OrganisationSettingsRoute
   '/organisation/staff': typeof OrganisationStaffRoute
   '/platform-admin/accounts': typeof PlatformAdminAccountsRoute
@@ -319,6 +327,7 @@ export interface FileRoutesById {
   '/member/pledges': typeof MemberPledgesRoute
   '/organisation/members': typeof OrganisationMembersRoute
   '/organisation/mpesa': typeof OrganisationMpesaRoute
+  '/organisation/reports': typeof OrganisationReportsRoute
   '/organisation/settings': typeof OrganisationSettingsRoute
   '/organisation/staff': typeof OrganisationStaffRoute
   '/platform-admin/accounts': typeof PlatformAdminAccountsRoute
@@ -358,6 +367,7 @@ export interface FileRouteTypes {
     | '/member/pledges'
     | '/organisation/members'
     | '/organisation/mpesa'
+    | '/organisation/reports'
     | '/organisation/settings'
     | '/organisation/staff'
     | '/platform-admin/accounts'
@@ -392,6 +402,7 @@ export interface FileRouteTypes {
     | '/member/pledges'
     | '/organisation/members'
     | '/organisation/mpesa'
+    | '/organisation/reports'
     | '/organisation/settings'
     | '/organisation/staff'
     | '/platform-admin/accounts'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/member/pledges'
     | '/organisation/members'
     | '/organisation/mpesa'
+    | '/organisation/reports'
     | '/organisation/settings'
     | '/organisation/staff'
     | '/platform-admin/accounts'
@@ -591,6 +603,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganisationMpesaRouteImport
       parentRoute: typeof OrganisationRoute
     }
+    '/organisation/reports': {
+      id: '/organisation/reports'
+      path: '/reports'
+      fullPath: '/organisation/reports'
+      preLoaderRoute: typeof OrganisationReportsRouteImport
+      parentRoute: typeof OrganisationRoute
+    }
     '/organisation/settings': {
       id: '/organisation/settings'
       path: '/settings'
@@ -742,6 +761,7 @@ const MemberRouteWithChildren =
 interface OrganisationRouteChildren {
   OrganisationMembersRoute: typeof OrganisationMembersRoute
   OrganisationMpesaRoute: typeof OrganisationMpesaRoute
+  OrganisationReportsRoute: typeof OrganisationReportsRoute
   OrganisationSettingsRoute: typeof OrganisationSettingsRoute
   OrganisationStaffRoute: typeof OrganisationStaffRoute
   OrganisationIndexRoute: typeof OrganisationIndexRoute
@@ -753,6 +773,7 @@ interface OrganisationRouteChildren {
 const OrganisationRouteChildren: OrganisationRouteChildren = {
   OrganisationMembersRoute: OrganisationMembersRoute,
   OrganisationMpesaRoute: OrganisationMpesaRoute,
+  OrganisationReportsRoute: OrganisationReportsRoute,
   OrganisationSettingsRoute: OrganisationSettingsRoute,
   OrganisationStaffRoute: OrganisationStaffRoute,
   OrganisationIndexRoute: OrganisationIndexRoute,

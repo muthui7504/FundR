@@ -303,10 +303,11 @@ function FundraiserPage() {
                   <p className="text-muted-foreground">
                     {org.type || "Church"} · {org.city || "Nairobi"}, {org.country || "Kenya"}
                   </p>
-                  <p className="mt-2 whitespace-pre-line text-muted-foreground">
-                    {org.description ||
-                      "A welcoming community church in Westlands serving families across Nairobi since 1998."}
-                  </p>
+                  {org.description && (
+                    <p className="mt-2 whitespace-pre-line text-muted-foreground">
+                      {org.description}
+                    </p>
+                  )}
                 </div>
               </div>
             </Panel>

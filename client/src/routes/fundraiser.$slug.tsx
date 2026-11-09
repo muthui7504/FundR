@@ -5,9 +5,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  Heart,
   ImageIcon,
   Maximize2,
   MessageCircle,
+  ShieldCheck,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -204,7 +206,7 @@ function FundraiserPage() {
           </span>
         </div>
       )}
-      <div className="relative h-40 overflow-hidden bg-hero sm:h-56">
+      <div className="relative h-48 overflow-hidden bg-hero sm:h-64 lg:h-72">
         {coverImage && (
           <img
             src={coverImage}
@@ -212,12 +214,21 @@ function FundraiserPage() {
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/5" />
+        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-4 pb-8 text-white sm:px-6 sm:pb-10">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/25 px-3 py-1 text-xs font-medium backdrop-blur">
+            <Heart className="size-3.5" />
+            {c.name}
+          </span>
+        </div>
       </div>
-      <div className="mx-auto -mt-20 max-w-6xl px-4 pb-16 sm:px-6">
+      <div className="relative mx-auto -mt-16 max-w-6xl px-4 pb-16 sm:-mt-20 sm:px-6">
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="space-y-6 lg:col-span-3">
-            <Panel className="p-6">
-              <div className="relative grid h-20 w-20 place-items-center overflow-hidden rounded-full border-4 border-card bg-primary-soft text-2xl font-bold text-primary">
+            <Panel className="overflow-hidden p-0">
+              <div className="h-2 bg-gradient-to-r from-primary via-primary/60 to-primary/20" />
+              <div className="p-5 sm:p-7">
+              <div className="relative grid size-20 place-items-center overflow-hidden rounded-2xl border-4 border-card bg-primary-soft text-2xl font-bold text-primary shadow-md sm:size-24">
                 {p.avatarUrl ? (
                   <img
                     src={p.avatarUrl}
@@ -231,18 +242,20 @@ function FundraiserPage() {
                     .join("")
                 )}
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                {m.name} is fundraising for{" "}
-                <span className="font-medium text-foreground">{c.name}</span>
+              <p className="mt-5 text-sm font-medium text-primary">
+                {m.name} is fundraising for {c.name}
               </p>
-              <h1 className="mt-1 font-display text-3xl font-bold sm:text-4xl">{p.title}</h1>
-              <p className="mt-4 whitespace-pre-line leading-relaxed text-muted-foreground">
+              <h1 className="mt-2 break-words font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                {p.title}
+              </h1>
+              <p className="mt-4 whitespace-pre-line leading-7 text-muted-foreground">
                 {p.message}
               </p>
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div className="mt-6 flex flex-col gap-2 border-t pt-5 sm:flex-row">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto"
                   onClick={() => {
                     navigator.clipboard?.writeText(url);
                     toast.success("Link copied");
@@ -251,7 +264,7 @@ function FundraiserPage() {
                   <Copy className="h-4 w-4" />
                   Copy link
                 </Button>
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
                   <a
                     href={`https://wa.me/?text=${encodeURIComponent(`Support ${m.name}: ${p.title} ${url}`)}`}
                     target="_blank"
@@ -262,24 +275,29 @@ function FundraiserPage() {
                   </a>
                 </Button>
               </div>
-            </Panel>
-            <Panel className="space-y-4 p-6">
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Wanjiku’s fundraising progress</p>
-                  <p className="mt-1 text-2xl font-bold">{formatKES(raised)}</p>
-                </div>
-                <p className="text-right text-sm text-muted-foreground">
-                  of {formatKES(p.target ?? c.target)}
-                  <span className="mt-1 block font-medium text-foreground">
-                    {pct(raised, p.target ?? c.target)}% raised
-                  </span>
-                </p>
               </div>
-              <ProgressBar value={pct(raised, p.target ?? c.target)} />
-              <p className="text-xs text-muted-foreground">
-                Every contribution helps Grace Community Church complete its community hall.
-              </p>
+            </Panel>
+            <Panel className="overflow-hidden p-0">
+              <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">{m.name}’s fundraising progress</p>
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-primary">{formatKES(raised)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    raised from {done.length} verified contribution{done.length === 1 ? "" : "s"}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-2xl border border-primary/10 bg-background/80 px-3 py-2 text-right shadow-sm">
+                  <span className="block text-lg font-bold text-foreground">{pct(raised, p.target ?? c.target)}%</span>
+                  <span className="text-[11px] text-muted-foreground">of goal</span>
+                </span>
+              </div>
+              <ProgressBar value={pct(raised, p.target ?? c.target)} className="mt-5" />
+              <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>Goal: {formatKES(p.target ?? c.target)}</span>
+                <span>{formatKES(Math.max(0, (p.target ?? c.target) - raised))} to go</span>
+              </div>
+              </div>
             </Panel>
             <Panel className="p-6">
               <h2 className="font-semibold">About the organisation</h2>
@@ -313,20 +331,36 @@ function FundraiserPage() {
             </Panel>
           </div>
           <div className="lg:col-span-2">
-            <Panel className="space-y-5 p-6 lg:sticky lg:top-20">
+            <Panel className="overflow-hidden p-0 lg:sticky lg:top-20">
+              <div className="border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 sm:p-6">
+                <div className="flex items-start gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                    <Heart className="size-5" />
+                  </span>
+                  <div>
+                    <h2 className="font-display text-xl font-bold">Make a difference</h2>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                      Your support helps {c.name}.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-5 p-5 sm:p-6">
               {!accepting && (
                 <p className="rounded-xl bg-warning-soft p-3 text-sm text-warning">
                   This page isn't accepting contributions right now.
                 </p>
               )}
-              <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-muted/80 p-1.5">
                 {(["give", "pledge"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
                     className={cn(
-                      "rounded-lg py-2 text-sm font-medium",
-                      tab === t ? "bg-card shadow-card" : "text-muted-foreground",
+                      "min-h-11 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      tab === t
+                        ? "bg-card text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {t === "give" ? "Give now" : "Pledge"}
@@ -384,6 +418,15 @@ function FundraiserPage() {
                   }}
                 />
               )}
+              <div className="flex items-center justify-center gap-2 border-t pt-4 text-center text-xs text-muted-foreground">
+                <ShieldCheck className="size-4 shrink-0 text-primary" />
+                <span>
+                  {tab === "give"
+                    ? "Secure M-Pesa payment · PIN stays private"
+                    : "Pledges are tracked separately until paid"}
+                </span>
+              </div>
+              </div>
             </Panel>
           </div>
         </div>

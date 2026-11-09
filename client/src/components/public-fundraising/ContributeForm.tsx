@@ -176,7 +176,25 @@ export function ContributeForm({ profileId, disabled, onDone, onState, onValue, 
       <div>
         <p className="mb-2 text-sm font-medium">Amount</p>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {SUGGESTED.map((a) => <button type="button" key={a} onClick={() => { setAmount(a); setCustom(""); }} className={cn("h-11 rounded-xl border text-sm font-semibold", !custom && amount === a ? "border-primary bg-primary-soft text-primary" : "bg-card")}>{a.toLocaleString()}</button>)}
+          {SUGGESTED.map((a) => (
+            <button
+              type="button"
+              key={a}
+              onClick={() => {
+                setAmount(a);
+                setCustom("");
+              }}
+              aria-pressed={!custom && amount === a}
+              className={cn(
+                "h-12 rounded-xl border text-sm font-semibold transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                !custom && amount === a
+                  ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                  : "bg-card text-foreground",
+              )}
+            >
+              KSh {a.toLocaleString()}
+            </button>
+          ))}
         </div>
       </div>
       <Field label="Or enter a custom amount (KSh)" htmlFor="amt" error={er.amount}><input ref={amountRef} id="amt" type="number" inputMode="numeric" min={10} className={inputCls} value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="e.g. 750" /></Field>

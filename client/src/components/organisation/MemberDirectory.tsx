@@ -12,11 +12,12 @@ const STATUSES = ["ALL", "ACTIVE", "INVITED", "SUSPENDED"] as const;
 export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
   const { members, setMembers, user } = useDemo();
   const isAdmin = user?.role === "ORGANISATION_ADMIN";
+  const hiddenMemberId = isAdmin && !staffOnly ? user?.memberId : undefined;
   const [q, setQ] = useState(""); const [st, setSt] = useState<(typeof STATUSES)[number]>("ALL");
   const [act, setAct] = useState<{ m: Member; kind: "suspend" | "remove" | "restore" } | null>(null);
   const [inviteUrl, setInviteUrl] = useState("");
   const [inviting, setInviting] = useState(false);
-  const rows = members.filter((m) => m.status !== "REMOVED" && (!staffOnly || m.role !== "MEMBER") && (st === "ALL" || m.status === st) &&
+  const rows = members.filter((m) => m.id !== hiddenMemberId && m.status !== "REMOVED" && (!staffOnly || m.role !== "MEMBER") && (st === "ALL" || m.status === st) &&
     [m.name, m.email, m.phone].some((v) => v.toLowerCase().includes(q.toLowerCase())));
   const pg = usePaged(rows, 8);
   const setRole = async (id: string, role: MembershipRole) => {

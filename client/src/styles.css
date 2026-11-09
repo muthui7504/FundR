@@ -78,8 +78,8 @@
 
 :root {
   --radius: 0.875rem;
-  --background: oklch(0.984 0.003 247.858);
-  --foreground: oklch(0.208 0.042 265.755);
+  --background: oklch(0.978 0.012 160);
+  --foreground: oklch(0.205 0.035 166);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.208 0.042 265.755);
   --popover: oklch(1 0 0);
@@ -103,8 +103,8 @@
   --danger-soft: oklch(0.95 0.04 25);
   --info: oklch(0.55 0.15 250);
   --info-soft: oklch(0.95 0.03 250);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
+  --border: oklch(0.91 0.018 163);
+  --input: oklch(0.91 0.018 163);
   --ring: oklch(0.508 0.118 165.612);
   --ink: oklch(0.208 0.042 265.755);
   --ink-foreground: oklch(0.984 0.003 247.858);
@@ -113,16 +113,16 @@
   --chart-3: oklch(0.666 0.157 58);
   --chart-4: oklch(0.55 0.15 250);
   --chart-5: oklch(0.554 0.046 257.417);
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.208 0.042 265.755);
+  --sidebar: oklch(0.986 0.009 160);
+  --sidebar-foreground: oklch(0.205 0.035 166);
   --sidebar-primary: oklch(0.508 0.118 165.612);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.95 0.045 163);
   --sidebar-accent-foreground: oklch(0.432 0.095 166.913);
-  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-border: oklch(0.91 0.018 163);
   --sidebar-ring: oklch(0.508 0.118 165.612);
-  --shadow-card: 0 1px 2px oklch(0.2 0.04 265 / 0.04), 0 4px 16px -8px oklch(0.2 0.04 265 / 0.08);
-  --shadow-elevated: 0 20px 50px -20px oklch(0.432 0.095 166.913 / 0.35);
+  --shadow-card: 0 1px 2px oklch(0.2 0.04 166 / 0.04), 0 8px 26px -18px oklch(0.25 0.06 166 / 0.24);
+  --shadow-elevated: 0 20px 48px -24px oklch(0.432 0.095 166.913 / 0.32);
   --gradient-hero:
     radial-gradient(ellipse at top right, oklch(0.95 0.045 163) 0%, transparent 55%),
     radial-gradient(ellipse at bottom left, oklch(0.96 0.06 85 / 0.6) 0%, transparent 50%);
@@ -151,6 +151,15 @@
   body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 }
 

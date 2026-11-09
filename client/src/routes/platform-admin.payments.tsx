@@ -107,7 +107,7 @@ function Payments() {
         <ErrorState message={error} onRetry={() => setAttempt((value) => value + 1)} />
       ) : (
         <>
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
             {loading && planSummaries.length === 0 ? (
               <Panel className="flex items-center gap-2 p-4 text-sm text-muted-foreground sm:col-span-2 xl:col-span-4">
                 <Loader2 className="h-4 w-4 animate-spin" />

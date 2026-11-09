@@ -42,7 +42,7 @@ function Overview() {
     <>
       <PageHeader title={`Habari, ${user?.firstName || "Member"}`} description="Here's how your fundraising is going."
         actions={<><Button asChild variant="outline"><Link to="/member/join-campaign">Join a campaign</Link></Button><Button asChild><Link to="/member/fundraising-pages/create"><Plus className="h-4 w-4" />New page</Link></Button></>} />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Total actual raised" value={formatKES(raised)} hint="Verified contributions" icon={<Wallet className="h-5 w-5" />} />
         <StatCard label="Active pages" value={String(mine.filter((p) => p.status === "PUBLISHED" && campaigns.some((campaign) => campaign.id === p.campaignId && campaign.status === "ACTIVE")).length)} icon={<FileHeart className="h-5 w-5" />} tone="info" />
         <StatCard label="Campaigns joined" value={String(joined)} icon={<Megaphone className="h-5 w-5" />} tone="muted" />

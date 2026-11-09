@@ -26,6 +26,17 @@ function Nav({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void 
   );
 }
 
+function mobileLabel(label: string) {
+  const labels: Record<string, string> = {
+    "My Campaigns": "Campaigns",
+    "My Fundraising Pages": "Pages",
+    "Contribution History": "History",
+    "Payments & billing": "Payments",
+    Organisations: "Orgs",
+  };
+  return labels[label] ?? label;
+}
+
 export function DashboardShell({ items, area, user, footer }: { items: NavItem[]; area: string; user: { name: string; sub: string }; footer?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -58,13 +69,13 @@ export function DashboardShell({ items, area, user, footer }: { items: NavItem[]
     </div>
   );
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background bg-hero">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-sidebar lg:block">{side()}</aside>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent id="dashboard-mobile-navigation" side="left" className="w-72 p-0"><SheetTitle className="sr-only">Navigation</SheetTitle>{side(() => setOpen(false))}</SheetContent>
       </Sheet>
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-background/85 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/70 bg-background/85 px-3 backdrop-blur-xl sm:px-6">
           <button type="button" className="grid h-11 w-11 place-items-center rounded-xl border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open} aria-controls="dashboard-mobile-navigation"><Menu className="h-5 w-5" /></button>
           <div className="lg:hidden"><Logo /></div>
           <div className="ml-auto flex items-center gap-2">
@@ -74,12 +85,38 @@ export function DashboardShell({ items, area, user, footer }: { items: NavItem[]
             <button type="button" className="grid h-11 w-11 place-items-center rounded-xl border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Notifications"><Bell className="h-4 w-4" /></button>
           </div>
         </header>
-        <main className={cn("mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8")}>
+        <main className={cn("mx-auto max-w-7xl px-3 py-5 pb-28 sm:px-6 sm:py-8 sm:pb-32 lg:pb-8")}>
           {loading && <p role="status" className="mb-4 flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />Refreshing your data…</p>}
           {loadError && <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm"><span>Some data may be out of date or unavailable. {loadError}</span><button type="button" className="font-semibold text-primary underline-offset-4 hover:underline disabled:opacity-50" onClick={retry} disabled={loading}>Retry</button></div>}
           <Outlet />
         </main>
       </div>
+      <nav
+        aria-label="Quick navigation"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-border/70 bg-card/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1.5 shadow-[0_-8px_28px_-20px_oklch(0.25_0.06_166_/_0.4)] backdrop-blur-xl lg:hidden"
+      >
+        {items.slice(0, 3).map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            activeOptions={{ exact: !!item.exact }}
+            className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.65rem] font-medium leading-none text-muted-foreground transition-colors active:bg-muted"
+            activeProps={{ className: "!text-primary" }}
+          >
+            <item.icon className="size-[1.15rem] shrink-0" />
+            <span className="max-w-full truncate">{mobileLabel(item.label)}</span>
+          </Link>
+        ))}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.65rem] font-medium leading-none text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Open all dashboard sections"
+        >
+          <Menu className="size-[1.15rem] shrink-0" />
+          <span>More</span>
+        </button>
+      </nav>
     </div>
   );
 }

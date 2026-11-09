@@ -161,7 +161,7 @@ function OrganisationDetails() {
         actions={<StatusBadge status={organisation.status} />}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Campaigns" value={String(campaigns.length)} hint={`${activeCampaigns} active`} icon={<Building2 className="h-5 w-5" />} tone="info" />
         <StatCard label="Members" value={String(members.length)} />
         <StatCard label="Verified funds raised" value={formatKES(raised)} />

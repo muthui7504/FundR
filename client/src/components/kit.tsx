@@ -8,32 +8,98 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function Panel({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cn("min-w-0 rounded-2xl border bg-card shadow-card", className)}>{children}</div>;
+  return (
+    <div
+      className={cn(
+        "relative min-w-0 rounded-2xl border border-border/75 bg-card shadow-card transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_14px_36px_-22px_oklch(0.35_0.08_165_/_0.32)] motion-reduce:transform-none motion-reduce:transition-none",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mb-5 flex min-w-0 flex-col gap-4 sm:mb-7 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
-        <h1 className="break-words text-2xl font-bold sm:text-3xl">{title}</h1>
-        {description && <p className="mt-1 break-words text-sm text-muted-foreground">{description}</p>}
+        <h1 className="break-words font-display text-[1.7rem] font-semibold leading-tight tracking-tight sm:text-3xl">
+          {title}
+        </h1>
+        {description && (
+          <p className="mt-2 max-w-2xl break-words text-sm leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        )}
       </div>
-      {actions && <div className="flex min-w-0 flex-wrap gap-2 lg:justify-end">{actions}</div>}
+      {actions && (
+        <div className="flex min-w-0 flex-wrap gap-2 [&>*]:max-sm:flex-1 [&>*]:max-sm:justify-center lg:justify-end">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
 
 export function StatCard({ label, value, hint, icon, tone = "primary" }: { label: string; value: string; hint?: string; icon?: ReactNode; tone?: "primary" | "warning" | "info" | "muted" }) {
-  const tones = { primary: "bg-primary-soft text-primary", warning: "bg-warning-soft text-warning", info: "bg-info-soft text-info", muted: "bg-muted text-muted-foreground" };
+  const tones = {
+    primary: {
+      icon: "border-primary/10 bg-primary-soft text-primary",
+      glow: "bg-primary/10",
+      accent: "before:bg-primary",
+    },
+    warning: {
+      icon: "border-warning/10 bg-warning-soft text-warning",
+      glow: "bg-warning/10",
+      accent: "before:bg-warning",
+    },
+    info: {
+      icon: "border-info/10 bg-info-soft text-info",
+      glow: "bg-info/10",
+      accent: "before:bg-info",
+    },
+    muted: {
+      icon: "border-border bg-muted text-muted-foreground",
+      glow: "bg-muted-foreground/10",
+      accent: "before:bg-muted-foreground/40",
+    },
+  };
   return (
-    <Panel className="p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-2 truncate text-2xl font-bold">{value}</p>
-          {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+    <Panel
+      className={cn(
+        "isolate overflow-hidden bg-gradient-to-br from-card via-card to-primary-soft/35 p-3.5 before:absolute before:bottom-4 before:left-0 before:top-4 before:w-1 before:rounded-r-full sm:p-5",
+        tones[tone].accent,
+      )}
+    >
+      <div
+        aria-hidden="true"
+        className={cn("pointer-events-none absolute -right-8 -top-10 size-28 rounded-full blur-2xl", tones[tone].glow)}
+      />
+      <div className="relative flex items-start justify-between gap-2.5 sm:gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-[0.7rem] font-semibold leading-snug text-muted-foreground sm:text-sm">
+            {label}
+          </p>
+          <p className="mt-2 break-words text-xl font-bold leading-tight tracking-tight tabular-nums sm:mt-2.5 sm:text-2xl">
+            {value}
+          </p>
+          {hint && (
+            <p className="mt-1.5 line-clamp-2 text-[0.65rem] leading-snug text-muted-foreground sm:text-xs">
+              {hint}
+            </p>
+          )}
         </div>
-        {icon && <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-xl", tones[tone])}>{icon}</div>}
+        {icon && (
+          <div
+            className={cn(
+              "grid size-9 shrink-0 place-items-center rounded-xl border sm:size-11 sm:rounded-2xl",
+              tones[tone].icon,
+            )}
+          >
+            {icon}
+          </div>
+        )}
       </div>
     </Panel>
   );

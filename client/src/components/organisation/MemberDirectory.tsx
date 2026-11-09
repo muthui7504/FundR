@@ -3,6 +3,14 @@ import { MailPlus, Search, ShieldCheck, UserRound, UsersRound } from "lucide-rea
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ConfirmDialog,
   EmptyState,
   FilterChips,
@@ -31,11 +39,17 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
   };
   const [q, setQ] = useState("");
   const [st, setSt] = useState<(typeof STATUSES)[number]>("ALL");
-  const [act, setAct] = useState<{ m: Member; kind: "suspend" | "remove" | "restore" } | null>(
+  const [act, setAct] = useState<{
+    m: Member;
+    kind: "suspend" | "remove" | "restore" | "revoke";
+  } | null>(
     null,
   );
   const [inviteUrl, setInviteUrl] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteForEmail, setInviteForEmail] = useState("");
   const rows = members.filter(
     (m) =>
       (!isCurrentUser(m) || staffOnly) &&
@@ -65,12 +79,26 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
       toast.error(error instanceof Error ? error.message : "Unable to update member role.");
     }
   };
-  const inviteMember = async () => {
+  const inviteMember = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const email = inviteEmail.trim().toLowerCase();
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+      toast.error("Enter a valid email address, or leave it blank for a shareable link.");
+      return;
+    }
     setInviting(true);
     try {
-      const invitation = await api.organisations.inviteMember();
+      const invitation = await api.organisations.inviteMember(email || undefined);
       const url = `${window.location.origin}/register?invite=${encodeURIComponent(invitation.token)}`;
       setInviteUrl(url);
+      setInviteForEmail(email);
+      setInviteDialogOpen(false);
+      setInviteEmail("");
+      try {
+        setMembers(await api.organisations.members());
+      } catch {
+        toast.error("Invitation created, but the Members list could not refresh. Reload the page.");
+      }
       try {
         await navigator.clipboard.writeText(url);
         toast.success("Invitation link copied");
@@ -85,43 +113,57 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
       setInviting(false);
     }
   };
-  const actions = (m: Member) => (
-    <div className="flex flex-wrap gap-1">
-      {isAdmin && !staffOnly && (
-        <select
-          aria-label={`Role for ${m.name}`}
-          className={inputCls + " h-8 w-28 text-xs"}
-          value={m.role}
-          onChange={(e) => setRole(m.id, e.target.value as MembershipRole)}
-        >
-          <option>ADMIN</option>
-          <option>STAFF</option>
-          <option>MEMBER</option>
-        </select>
-      )}
-      {!isCurrentUser(m) &&
-        (isAdmin || m.role === "MEMBER") &&
-        (m.status === "SUSPENDED" ? (
-          <Button size="sm" variant="ghost" onClick={() => setAct({ m, kind: "restore" })}>
-            Restore
-          </Button>
-        ) : (
-          <Button size="sm" variant="ghost" onClick={() => setAct({ m, kind: "suspend" })}>
-            Suspend
-          </Button>
-        ))}
-      {!isCurrentUser(m) && (isAdmin || m.role === "MEMBER") && (
+  const actions = (m: Member) => {
+    if (m.invitationId) {
+      return (
         <Button
           size="sm"
           variant="ghost"
           className="text-destructive"
-          onClick={() => setAct({ m, kind: "remove" })}
+          onClick={() => setAct({ m, kind: "revoke" })}
         >
-          Remove
+          Revoke invite
         </Button>
-      )}
-    </div>
-  );
+      );
+    }
+    return (
+      <div className="flex flex-wrap gap-1">
+        {isAdmin && !staffOnly && (
+          <select
+            aria-label={`Role for ${m.name}`}
+            className={inputCls + " h-8 w-28 text-xs"}
+            value={m.role}
+            onChange={(e) => setRole(m.id, e.target.value as MembershipRole)}
+          >
+            <option>ADMIN</option>
+            <option>STAFF</option>
+            <option>MEMBER</option>
+          </select>
+        )}
+        {!isCurrentUser(m) &&
+          (isAdmin || m.role === "MEMBER") &&
+          (m.status === "SUSPENDED" ? (
+            <Button size="sm" variant="ghost" onClick={() => setAct({ m, kind: "restore" })}>
+              Restore
+            </Button>
+          ) : (
+            <Button size="sm" variant="ghost" onClick={() => setAct({ m, kind: "suspend" })}>
+              Suspend
+            </Button>
+          ))}
+        {!isCurrentUser(m) && (isAdmin || m.role === "MEMBER") && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-destructive"
+            onClick={() => setAct({ m, kind: "remove" })}
+          >
+            Remove
+          </Button>
+        )}
+      </div>
+    );
+  };
   return (
     <>
       <div className="mb-5 grid grid-cols-3 gap-3">
@@ -159,15 +201,9 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
             </div>
             <div className="flex flex-col gap-3 sm:items-end">
               {!staffOnly && (
-                <Button onClick={() => void inviteMember()} disabled={inviting}>
-                  {inviting ? (
-                    "Creating link..."
-                  ) : (
-                    <>
-                      <MailPlus className="size-4" />
-                      Invite member
-                    </>
-                  )}
+                <Button onClick={() => setInviteDialogOpen(true)} disabled={inviting}>
+                  <MailPlus className="size-4" />
+                  Invite member
                 </Button>
               )}
               <FilterChips options={STATUSES} value={st} onChange={setSt} />
@@ -194,10 +230,41 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
             {inviteUrl}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            This link expires in seven days. Copy and share it with your new member.
+            This link expires in seven days.{" "}
+            {inviteForEmail ? `It is addressed to ${inviteForEmail}.` : "Anyone with the link can use it."}
           </p>
         </Panel>
       )}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="rounded-2xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite a member</DialogTitle>
+            <DialogDescription>
+              Add an email to identify the pending invite in your Members list, or leave it blank
+              to create a shareable general invite link.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={inviteMember} className="space-y-4">
+            <label htmlFor="member-invite-email" className="block text-sm font-medium">
+              Email address <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <input
+              id="member-invite-email"
+              type="email"
+              className={inputCls}
+              placeholder="member@example.com"
+              value={inviteEmail}
+              onChange={(event) => setInviteEmail(event.target.value)}
+              autoComplete="email"
+            />
+            <DialogFooter>
+              <Button type="submit" disabled={inviting}>
+                {inviting ? "Creating invite..." : "Create invitation link"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Panel className="overflow-hidden">
         {rows.length === 0 ? (
           <EmptyState
@@ -222,7 +289,7 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
                     <th className="px-5 py-3.5">Contact</th>
                     <th className="px-5 py-3.5">Role</th>
                     <th className="px-5 py-3.5">Status</th>
-                    <th className="px-5 py-3.5">Joined</th>
+                    <th className="px-5 py-3.5">Joined / expires</th>
                     <th className="px-5 py-3.5">Manage</th>
                   </tr>
                 </thead>
@@ -247,7 +314,9 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
                         <StatusBadge status={m.status} />
                       </td>
                       <td className="whitespace-nowrap px-5 py-4 text-xs text-muted-foreground">
-                        {formatDate(m.joinedAt)}
+                        {m.invitationExpiresAt
+                          ? `Expires ${formatDate(m.invitationExpiresAt)}`
+                          : formatDate(m.joinedAt)}
                       </td>
                       <td className="px-5 py-4">{actions(m)}</td>
                     </tr>
@@ -275,8 +344,11 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
                   </div>
                   <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
                     <span>
-                      {staffOnly ? "Role" : "Joined"} ·{" "}
-                      {staffOnly ? m.role.toLowerCase() : formatDate(m.joinedAt)}
+                      {m.invitationExpiresAt
+                        ? `Expires · ${formatDate(m.invitationExpiresAt)}`
+                        : staffOnly
+                          ? `Role · ${m.role.toLowerCase()}`
+                          : `Joined · ${formatDate(m.joinedAt)}`}
                     </span>
                     {staffOnly && <span>Joined · {formatDate(m.joinedAt)}</span>}
                     {m.phone && <span>+{m.phone}</span>}
@@ -295,17 +367,37 @@ export function MemberDirectory({ staffOnly }: { staffOnly?: boolean }) {
         destructive={act?.kind !== "restore"}
         title={act ? `${act.kind[0].toUpperCase() + act.kind.slice(1)} ${act.m.name}?` : ""}
         description={
-          act?.kind === "remove"
-            ? "They will lose access to this organisation and its campaigns."
-            : act?.kind === "suspend"
-              ? "They won't be able to fundraise until restored."
-              : "Their access will be restored."
+          act?.kind === "revoke"
+            ? "This link will stop working and the pending invite will be removed from the Members list."
+            : act?.kind === "remove"
+              ? "They will lose access to this organisation and its campaigns."
+              : act?.kind === "suspend"
+                ? "They won't be able to fundraise until restored."
+                : "Their access will be restored."
         }
         confirmLabel={
-          act?.kind === "remove" ? "Remove" : act?.kind === "suspend" ? "Suspend" : "Restore"
+          act?.kind === "revoke"
+            ? "Revoke invite"
+            : act?.kind === "remove"
+              ? "Remove"
+              : act?.kind === "suspend"
+                ? "Suspend"
+                : "Restore"
         }
         onConfirm={async () => {
           if (!act) return;
+          if (act.kind === "revoke") {
+            if (!act.m.invitationId) return;
+            try {
+              await api.organisations.revokeInvitation(act.m.invitationId);
+              setMembers((ms) => ms.filter((m) => m.invitationId !== act.m.invitationId));
+              toast.success("Invitation revoked");
+              setAct(null);
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Unable to revoke invitation.");
+            }
+            return;
+          }
           const status =
             act.kind === "remove" ? "REMOVED" : act.kind === "suspend" ? "SUSPENDED" : "ACTIVE";
           try {

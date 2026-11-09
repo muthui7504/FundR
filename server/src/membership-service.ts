@@ -1,7 +1,13 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { prisma } from "./config/prisma";
-import { databaseEnabled, id, store, type DemoUser } from "./api-context";
+import {
+  databaseEnabled,
+  id,
+  isCampaignEndDateExpired,
+  store,
+  type DemoUser,
+} from "./api-context";
 import {
   findMembershipTier,
   requiredMembershipTier,
@@ -448,6 +454,30 @@ export async function validateOrganisationInvitation(
       );
     campaignMembership = await getCampaignMembershipOverview(campaign);
   }
+  const activeCampaigns = await Promise.all(
+    store.campaigns
+      .filter(
+        (campaign) =>
+          campaign.orgId === invitation.orgId &&
+          campaign.status === "ACTIVE" &&
+          !isCampaignEndDateExpired(campaign.endDate),
+      )
+      .map(async (campaign) => {
+        const membership = await getCampaignMembershipOverview(campaign);
+        return {
+          id: campaign.id,
+          name: campaign.name,
+          shortDescription: campaign.shortDescription,
+          endDate: campaign.endDate,
+          joinCode: campaign.joinCode,
+          coverImageUrl: campaign.coverImageUrl,
+          activeMemberCount: membership.activeMemberCount,
+          maxMembers: membership.maxMembers,
+          remainingCapacity: membership.remainingCapacity,
+          canJoin: !membership.atLimit,
+        };
+      }),
+  );
   return {
     organisationId: invitation.orgId,
     organisation: {
@@ -459,7 +489,191 @@ export async function validateOrganisationInvitation(
     expiresAt: invitation.expiresAt.toISOString(),
     canJoin: campaignMembership ? !campaignMembership.atLimit : true,
     ...(campaignMembership ? { campaignMembership } : {}),
+    activeCampaigns,
   };
+}
+
+export async function acceptOrganisationInvitation(
+  token: string,
+  userId: string,
+) {
+  const tokenHash = hashInvitationToken(token);
+  const preview = await prisma.organisationInvitation.findUnique({
+    where: { tokenHash },
+  });
+  if (!preview || preview.revokedAt || preview.expiresAt <= new Date())
+    throw new MembershipError(
+      "This invitation is invalid, expired, or has been revoked.",
+      404,
+    );
+  const organisation = store.organisations.find(
+    (item) => item.id === preview.orgId,
+  );
+  if (!organisation || organisation.status !== "ACTIVE")
+    throw new MembershipError(
+      "This organisation is not currently accepting members.",
+      404,
+    );
+  const accountPreview = await prisma.appUser.findUnique({
+    where: { id: userId },
+    include: { memberships: true },
+  });
+  if (!accountPreview || accountPreview.role !== "MEMBER")
+    throw new MembershipError("Member access is required to accept this invitation.", 403);
+  if (
+    preview.email &&
+    preview.email.trim().toLowerCase() !== accountPreview.email.toLowerCase()
+  )
+    throw new MembershipError(
+      "This invitation was issued to a different email address.",
+      403,
+    );
+  if (accountPreview.orgId && accountPreview.orgId !== preview.orgId)
+    throw new MembershipError(
+      "This account already belongs to another organisation. Use an account that belongs to the invited organisation.",
+      409,
+    );
+  if (
+    accountPreview.memberships.some(
+      (membership) =>
+        membership.orgId !== preview.orgId && membership.status === "ACTIVE",
+    )
+  )
+    throw new MembershipError(
+      "This account already belongs to another organisation. Use an account that belongs to the invited organisation.",
+      409,
+    );
+
+  const accepted = await withRetryableTransaction(async (tx) => {
+    await lockOrganisation(tx, preview.orgId);
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "AppUser"
+      WHERE "id" = ${userId}
+      FOR UPDATE
+    `;
+    const [invitation, account] = await Promise.all([
+      tx.organisationInvitation.findUnique({ where: { tokenHash } }),
+      tx.appUser.findUnique({
+        where: { id: userId },
+        include: { memberships: true },
+      }),
+    ]);
+    if (!invitation || invitation.revokedAt || invitation.expiresAt <= new Date())
+      throw new MembershipError(
+        "This invitation is invalid, expired, or has been revoked.",
+        404,
+      );
+    if (!account || account.role !== "MEMBER")
+      throw new MembershipError("Member access is required to accept this invitation.", 403);
+    if (
+      invitation.email &&
+      invitation.email.trim().toLowerCase() !== account.email.toLowerCase()
+    )
+      throw new MembershipError(
+        "This invitation was issued to a different email address.",
+        403,
+      );
+    if (account.orgId && account.orgId !== invitation.orgId)
+      throw new MembershipError(
+        "This account already belongs to another organisation. Use an account that belongs to the invited organisation.",
+        409,
+      );
+    if (
+      account.memberships.some(
+        (membership) =>
+          membership.orgId !== invitation.orgId && membership.status === "ACTIVE",
+      )
+    )
+      throw new MembershipError(
+        "This account already belongs to another organisation. Use an account that belongs to the invited organisation.",
+        409,
+      );
+
+    const existingMembership = account.memberships.find(
+      (membership) => membership.orgId === invitation.orgId,
+    );
+    if (existingMembership && existingMembership.status !== "ACTIVE")
+      throw new MembershipError(
+        "Your membership in this organisation is not active. Contact an administrator for help.",
+        403,
+      );
+    const memberId = existingMembership?.memberId ?? account.memberId ?? id("m");
+    const memberName = `${account.firstName} ${account.lastName}`.trim();
+    const existingMember = store.members.find((member) => member.id === memberId);
+    const member: Member = {
+      id: memberId,
+      name: existingMembership?.name ?? existingMember?.name ?? memberName,
+      email: account.email,
+      phone: existingMembership?.phone ?? existingMember?.phone ?? "",
+      role: "MEMBER",
+      status: "ACTIVE",
+      joinedAt: (
+        existingMembership?.joinedAt ?? new Date()
+      ).toISOString().slice(0, 10),
+    };
+
+    if (!existingMembership) {
+      const user: DemoUser = {
+        id: account.id,
+        email: account.email,
+        password: account.password,
+        firstName: account.firstName,
+        lastName: account.lastName,
+        role: "MEMBER",
+        orgId: invitation.orgId,
+        memberId,
+      };
+      const membership = toMembership(user, member);
+      if (!membership)
+        throw new MembershipError("Unable to create the organisation membership.", 500);
+      await tx.organisationMembership.create({ data: membership });
+      await tx.membershipAudit.create({
+        data: {
+          id: randomUUID(),
+          orgId: invitation.orgId,
+          actorId: account.id,
+          action: "member.invitation_accepted",
+          targetId: memberId,
+        },
+      });
+    }
+    if (account.orgId !== invitation.orgId || account.memberId !== memberId) {
+      await tx.appUser.update({
+        where: { id: account.id },
+        data: { orgId: invitation.orgId, memberId },
+      });
+    }
+
+    await tx.$executeRaw`
+      UPDATE "OrganisationInvitation"
+      SET "acceptedAt" = COALESCE("acceptedAt", NOW())
+      WHERE "id" = ${invitation.id}
+    `;
+    return {
+      user: {
+        id: account.id,
+        email: account.email,
+        password: account.password,
+        firstName: account.firstName,
+        lastName: account.lastName,
+        role: "MEMBER" as const,
+        orgId: invitation.orgId,
+        memberId,
+      },
+      member,
+    };
+  });
+
+  const cachedUserIndex = store.users.findIndex((user) => user.id === accepted.user.id);
+  if (cachedUserIndex < 0) store.users.push(accepted.user);
+  else store.users[cachedUserIndex] = accepted.user;
+  const cachedMemberIndex = store.members.findIndex(
+    (member) => member.id === accepted.member.id,
+  );
+  if (cachedMemberIndex < 0) store.members.push(accepted.member);
+  else store.members[cachedMemberIndex] = accepted.member;
+  return accepted.user;
 }
 
 export async function revokeOrganisationInvitation(
@@ -477,10 +691,52 @@ export async function revokeOrganisationInvitation(
 }
 
 export async function listOrganisationMemberships(orgId: string) {
-  return prisma.organisationMembership.findMany({
-    where: { orgId },
-    orderBy: [{ status: "asc" }, { name: "asc" }],
-  });
+  const [memberships, invitations] = await Promise.all([
+    prisma.organisationMembership.findMany({
+      where: { orgId },
+      orderBy: [{ status: "asc" }, { name: "asc" }],
+    }),
+    prisma.$queryRaw<
+      Array<{
+        id: string;
+        email: string | null;
+        createdAt: Date;
+        expiresAt: Date;
+      }>
+    >`
+      SELECT "id", "email", "createdAt", "expiresAt"
+      FROM "OrganisationInvitation"
+      WHERE "orgId" = ${orgId}
+        AND ("acceptedAt" IS NULL OR "email" IS NULL)
+        AND "revokedAt" IS NULL
+        AND "expiresAt" > ${new Date()}
+      ORDER BY "createdAt" DESC
+    `,
+  ]);
+  return [
+    ...memberships.map((membership) => ({
+      memberId: membership.memberId,
+      name: membership.name,
+      email: membership.email,
+      phone: membership.phone,
+      role: membership.role as MembershipRole,
+      status: membership.status as MembershipStatus,
+      joinedAt: membership.joinedAt,
+      invitationId: undefined,
+      invitationExpiresAt: undefined,
+    })),
+    ...invitations.map((invitation) => ({
+      memberId: `invitation:${invitation.id}`,
+      name: invitation.email ?? "Open invitation link",
+      email: invitation.email ?? "",
+      phone: "",
+      role: "MEMBER" as const,
+      status: "INVITED" as const,
+      joinedAt: invitation.createdAt,
+      invitationId: invitation.id,
+      invitationExpiresAt: invitation.expiresAt,
+    })),
+  ];
 }
 
 export async function updateOrganisationMembership(
@@ -1136,6 +1392,11 @@ export async function registerInvitedMember(input: {
         userId: user.id,
       },
     });
+    await tx.$executeRaw`
+      UPDATE "OrganisationInvitation"
+      SET "acceptedAt" = COALESCE("acceptedAt", NOW())
+      WHERE "id" = ${invitation.id}
+    `;
     await tx.membershipAudit.create({
       data: {
         id: randomUUID(),

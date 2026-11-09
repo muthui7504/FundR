@@ -55,6 +55,29 @@ export type CampaignMember = {
   progress: number;
 };
 
+export type InvitationCampaign = {
+  id: string;
+  name: string;
+  shortDescription: string;
+  endDate: string;
+  joinCode: string;
+  coverImageUrl?: string;
+  activeMemberCount: number;
+  maxMembers: number | null;
+  remainingCapacity: number | null;
+  canJoin: boolean;
+};
+
+export type InvitationPreview = {
+  organisationId: string;
+  organisation: { name: string; email: string; phone: string };
+  invitedEmail: string | null;
+  expiresAt: string;
+  canJoin: boolean;
+  activeCampaigns: InvitationCampaign[];
+  campaignMembership?: CampaignMembershipOverview;
+};
+
 export type FundraisingProfileInput = Partial<FundraisingProfile> & {
   avatarImage?: string;
   coverImage?: string;
@@ -175,15 +198,14 @@ export const api = {
 
   invitations: {
     validate: (token: string, campaignCode?: string) =>
-      get<{
-        organisationId: string;
-        organisation: { name: string; email: string; phone: string };
-        invitedEmail: string | null;
-        expiresAt: string;
-        canJoin: boolean;
-        campaignMembership?: CampaignMembershipOverview;
-      }>(
+      get<InvitationPreview>(
         `/invitations/validate/${encodeURIComponent(token)}${campaignCode ? `?campaignCode=${encodeURIComponent(campaignCode)}` : ""}`,
+      ),
+
+    accept: (token: string) =>
+      post<{ success: boolean; data: { user: AuthUser; invitation: InvitationPreview } }>(
+        "/invitations/accept",
+        { token },
       ),
   },
 

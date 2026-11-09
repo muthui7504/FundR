@@ -7,7 +7,8 @@ import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Field, inputCls } from "@/components/kit";
 import { api } from "@/services/api";
 import { GoogleMemberSignIn } from "@/components/auth/GoogleMemberSignIn";
-import type { AuthUser } from "@/services/api";
+import { InvitationCampaignDialog } from "@/components/auth/InvitationCampaignDialog";
+import type { AuthUser, InvitationCampaign } from "@/services/api";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -35,9 +36,37 @@ function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [phone, setPhone] = useState("");
+  const [campaignsToChoose, setCampaignsToChoose] = useState<InvitationCampaign[]>([]);
+  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
+  const skipCampaignChoice = () => {
+    setCampaignDialogOpen(false);
+    void nav({ to: "/member" });
+  };
 
   const completeLogin = async (user: AuthUser) => {
     const role = user.role;
+    let activeCampaigns: InvitationCampaign[] = [];
+    if (role === "MEMBER" && invite) {
+      const accepted = await api.invitations.accept(invite);
+      activeCampaigns = accepted.data.invitation.activeCampaigns;
+      window.dispatchEvent(new Event("fundraise:auth-change"));
+      if (campaignCode) {
+        await nav({
+          to: "/join/$code",
+          params: { code: campaignCode },
+          search: { invite },
+        });
+        return;
+      }
+      if (activeCampaigns.length > 0) {
+        setCampaignsToChoose(activeCampaigns);
+        setCampaignDialogOpen(true);
+        return;
+      }
+      await nav({ to: "/member" });
+      return;
+    }
+
     window.dispatchEvent(new Event("fundraise:auth-change"));
 
     if (role === "PLATFORM_ADMIN") {
@@ -195,6 +224,11 @@ function Login() {
           </Link>
         </p>
       </form>
+      <InvitationCampaignDialog
+        campaigns={campaignsToChoose}
+        open={campaignDialogOpen}
+        onSkip={skipCampaignChoice}
+      />
     </AuthLayout>
   );
 }

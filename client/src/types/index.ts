@@ -33,6 +33,8 @@ export interface Member {
   role: MembershipRole;
   status: MembershipStatus;
   joinedAt: string;
+  invitationId?: string;
+  invitationExpiresAt?: string;
 }
 export interface Campaign {
   id: string;

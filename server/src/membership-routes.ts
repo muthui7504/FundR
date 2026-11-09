@@ -6,6 +6,7 @@ import {
   error,
   id,
   json,
+  publicUser,
   store,
   stringValue,
   type ApiRouteContext,
@@ -13,6 +14,7 @@ import {
 import { prisma } from "./config/prisma";
 import {
   MembershipError,
+  acceptOrganisationInvitation,
   createOrganisationInvitation,
   activateFreeCampaignPlan,
   beginCampaignSubscriptionPayment,
@@ -79,6 +81,28 @@ export async function handleMembershipRoutes(
           campaignCode,
         ),
       );
+    } catch (cause) {
+      if (cause instanceof MembershipError)
+        return error(cause.message, cause.status, cause.details);
+      throw cause;
+    }
+  }
+
+  if (method === "POST" && path === "invitations/accept") {
+    if (!databaseEnabled)
+      return error("Invitation acceptance requires the configured PostgreSQL database.", 503);
+    const user = authError(request, ["MEMBER"]);
+    if (user instanceof Response) return user;
+    const input = await body(request);
+    const token = stringValue(input.token);
+    if (!token) return error("A valid organisation invitation is required.", 400);
+    try {
+      const acceptedUser = await acceptOrganisationInvitation(token, user.id);
+      const invitation = await validateOrganisationInvitation(token);
+      return json({
+        success: true,
+        data: { user: publicUser(acceptedUser), invitation },
+      });
     } catch (cause) {
       if (cause instanceof MembershipError)
         return error(cause.message, cause.status, cause.details);
@@ -859,6 +883,12 @@ export async function handleMembershipRoutes(
         role: item.role,
         status: item.status,
         joinedAt: item.joinedAt.toISOString().slice(0, 10),
+        ...(item.invitationId
+          ? {
+              invitationId: item.invitationId,
+              invitationExpiresAt: item.invitationExpiresAt?.toISOString(),
+            }
+          : {}),
       })),
     );
   }

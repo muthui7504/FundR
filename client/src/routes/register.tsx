@@ -8,7 +8,8 @@ import { isValidKenyanPhone } from "@/utils/format";
 import { cn } from "@/lib/utils";
 import { api } from "@/services/api";
 import { GoogleMemberSignIn } from "@/components/auth/GoogleMemberSignIn";
-import type { AuthUser } from "@/services/api";
+import type { AuthUser, InvitationCampaign } from "@/services/api";
+import { InvitationCampaignDialog } from "@/components/auth/InvitationCampaignDialog";
 import { isStrongPassword, passwordChecks, passwordError, passwordRequirements } from "@/utils/password";
 
 export const Route = createFileRoute("/register")({
@@ -35,6 +36,12 @@ function Register() {
   const [invitation, setInvitation] = useState<Awaited<ReturnType<typeof api.invitations.validate>> | null>(null);
   const [invitationLoading, setInvitationLoading] = useState(Boolean(invite));
   const [invitationError, setInvitationError] = useState("");
+  const [campaignsToChoose, setCampaignsToChoose] = useState<InvitationCampaign[]>([]);
+  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
+  const skipCampaignChoice = () => {
+    setCampaignDialogOpen(false);
+    void nav({ to: "/member" });
+  };
   useEffect(() => {
     if (!invite) return;
     setType("member");
@@ -46,18 +53,28 @@ function Register() {
       })
       .catch((error) => setInvitationError(error instanceof Error ? error.message : "This invitation could not be validated."))
       .finally(() => setInvitationLoading(false));
-  }, [invite]);
+  }, [invite, campaignCode]);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value });
   const completeGoogleSignIn = async (user: AuthUser) => {
+    let signedInUser = user;
+    let activeCampaigns = invitation?.activeCampaigns ?? [];
+    if (invite && user.role === "MEMBER") {
+      const accepted = await api.invitations.accept(invite);
+      signedInUser = accepted.data.user;
+      activeCampaigns = accepted.data.invitation.activeCampaigns;
+    }
     window.dispatchEvent(new Event("fundraise:auth-change"));
-    if (campaignCode && user.role === "MEMBER") {
+    if (campaignCode && signedInUser.role === "MEMBER") {
       await nav({
         to: "/join/$code",
         params: { code: campaignCode },
         search: { invite },
       });
+    } else if (invite && signedInUser.role === "MEMBER" && activeCampaigns.length) {
+      setCampaignsToChoose(activeCampaigns);
+      setCampaignDialogOpen(true);
     } else {
-      await nav({ to: "/member" });
+      await nav({ to: signedInUser.role === "ORGANISATION_ADMIN" ? "/organisation" : "/member" });
     }
   };
   const finishPasswordRegistration = async (user: AuthUser) => {
@@ -68,6 +85,9 @@ function Register() {
         params: { code: campaignCode },
         search: { invite },
       });
+    } else if (invite && user.role === "MEMBER" && invitation?.activeCampaigns.length) {
+      setCampaignsToChoose(invitation.activeCampaigns);
+      setCampaignDialogOpen(true);
     } else {
       await nav({ to: user.role === "ORGANISATION_ADMIN" ? "/organisation" : "/member" });
     }
@@ -197,6 +217,11 @@ function Register() {
             Back to account details
           </button>
         </form>
+        <InvitationCampaignDialog
+          campaigns={campaignsToChoose}
+          open={campaignDialogOpen}
+          onSkip={skipCampaignChoice}
+        />
       </AuthLayout>
     );
   }

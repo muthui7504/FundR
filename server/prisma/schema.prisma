@@ -116,6 +116,7 @@ model OrganisationInvitation {
   createdAt DateTime  @default(now())
   expiresAt DateTime
   revokedAt DateTime?
+  acceptedAt DateTime?
 
   @@index([orgId, expiresAt])
 }

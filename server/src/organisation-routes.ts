@@ -45,6 +45,12 @@ if (method === "GET" && parts[2] === "members") {
       role: item.role,
       status: item.status,
       joinedAt: item.joinedAt.toISOString().slice(0, 10),
+      ...(item.invitationId
+        ? {
+            invitationId: item.invitationId,
+            invitationExpiresAt: item.invitationExpiresAt?.toISOString(),
+          }
+        : {}),
     })));
   }
   const organisationMemberIds = new Set(
@@ -96,6 +102,12 @@ if (method === "GET" && parts[2] === "dashboard") {
         role: item.role as Member["role"],
         status: item.status as Member["status"],
         joinedAt: item.joinedAt.toISOString().slice(0, 10),
+        ...(item.invitationId
+          ? {
+              invitationId: item.invitationId,
+              invitationExpiresAt: item.invitationExpiresAt?.toISOString(),
+            }
+          : {}),
       }))
     : Array.from(organisationMemberIds)
         .map((memberId) => store.members.find((item) => item.id === memberId))

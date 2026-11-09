@@ -249,6 +249,16 @@ function FundraiserPage() {
               <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
                 {c.description || c.shortDescription}
               </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-4 w-full sm:w-auto"
+                onClick={() => setCampaignDetailsOpen(true)}
+              >
+                <ImageIcon className="size-4" />
+                View photos / more details
+              </Button>
               <div className="mt-5 flex items-start gap-3 rounded-xl bg-muted p-4">
                 <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div className="text-sm">
@@ -263,15 +273,6 @@ function FundraiserPage() {
                 </div>
               </div>
             </Panel>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => setCampaignDetailsOpen(true)}
-            >
-              <ImageIcon className="size-4" />
-              View photos / more details
-            </Button>
           </div>
           <div className="lg:col-span-2">
             <Panel className="space-y-5 p-6 lg:sticky lg:top-20">

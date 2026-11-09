@@ -224,9 +224,23 @@ function SummaryCard({
     gold: "bg-warning-soft text-warning",
   };
   return (
-    <Panel className="relative isolate overflow-hidden p-4 sm:p-5">
+    <Panel className="relative isolate overflow-hidden p-3 sm:p-5">
       <div className="absolute -right-7 -top-8 -z-10 size-24 rounded-full bg-primary-soft/60 blur-2xl" />
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-center gap-3 sm:hidden">
+        <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${styles[tone]}`}>
+          {icon}
+        </span>
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold text-foreground">{label}</p>
+            <p className="mt-0.5 truncate text-[0.65rem] text-muted-foreground">{note}</p>
+          </div>
+          <p className="shrink-0 whitespace-nowrap text-base font-bold tracking-tight tabular-nums">
+            {value}
+          </p>
+        </div>
+      </div>
+      <div className="hidden items-start justify-between gap-3 sm:flex">
         <div>
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
           <p className="mt-2 text-2xl font-bold tracking-tight tabular-nums">{value}</p>

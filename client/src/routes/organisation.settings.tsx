@@ -49,7 +49,7 @@ function Settings() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {input("name", "Organisation name")}
-            <Field label="Organisation URL slug" htmlFor="slug" hint="This identifier is managed by FundR and cannot be changed.">
+            <Field label="Organisation URL slug" htmlFor="slug">
               <input
                 id="slug"
                 className={`${inputCls} cursor-not-allowed bg-muted text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100`}

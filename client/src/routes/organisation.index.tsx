@@ -290,10 +290,10 @@ function Overview() {
               View all
             </Link>
           </div>
-          {mine.length === 0 ? (
+          {active.length === 0 ? (
             <EmptyState
-              title="No campaigns yet"
-              description="Create a campaign to start tracking fundraising progress."
+              title="No active campaigns"
+              description="Campaign progress for expired or inactive campaigns is hidden here."
               action={
                 <Button asChild>
                   <Link to="/organisation/campaigns/new">Create campaign</Link>
@@ -302,7 +302,7 @@ function Overview() {
             />
           ) : (
             <div className="mt-5 space-y-5">
-              {mine.slice(0, 4).map((campaign) => {
+              {active.slice(0, 4).map((campaign) => {
                 const campaignTotal = campaignRaised(campaign.id);
                 const progress = pct(campaignTotal, campaign.target);
                 return (

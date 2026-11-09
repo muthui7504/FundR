@@ -1,6 +1,41 @@
 import { addAudit, authError, body, completeExpiredCampaigns, error, id, isCampaignEndDateExpired, isOrgUser, json, numberValue, publicUser, readCookies, requireUser, sessions, store, stringValue, userFromRequest, type ApiRouteContext, type DemoUser } from "./api-context";
 import type { AuditEvent, Campaign, Contribution, FundraisingProfile, Member, MpesaAccount, Organisation, Plan, Participant, Pledge, Subscription } from "./types";
 import { getCampaignMembershipOverview, joinCampaign, MembershipError } from "./membership-service";
+import { ProfileImageError, saveProfileImage } from "./profile-image-storage";
+
+const MAX_CAMPAIGN_IMAGES = 8;
+const MAX_CAMPAIGN_IMAGE_UPLOAD_SIZE = 12 * 1024 * 1024;
+
+async function appendCampaignImages(
+  campaign: Campaign,
+  input: Record<string, unknown>,
+) {
+  const uploads = input.imageUploads;
+  delete input.imageUploads;
+  delete input.imageUrls;
+  if (uploads === undefined) return undefined;
+  if (
+    !Array.isArray(uploads) ||
+    !uploads.every((item): item is string => typeof item === "string")
+  )
+    return error("Campaign images are invalid.");
+  if ((campaign.imageUrls?.length ?? 0) + uploads.length > MAX_CAMPAIGN_IMAGES)
+    return error(`A campaign can have up to ${MAX_CAMPAIGN_IMAGES} images.`);
+  if (uploads.reduce((size, item) => size + item.length, 0) > MAX_CAMPAIGN_IMAGE_UPLOAD_SIZE)
+    return error("Campaign images are too large. Choose fewer or smaller images.");
+  try {
+    const savedImages: string[] = [];
+    for (const upload of uploads) savedImages.push(await saveProfileImage(upload));
+    if (savedImages.length > 0) {
+      campaign.imageUrls = [...(campaign.imageUrls ?? []), ...savedImages];
+      campaign.coverImageUrl ??= savedImages[0];
+    }
+  } catch (cause) {
+    if (cause instanceof ProfileImageError) return error(cause.message, 400);
+    throw cause;
+  }
+  return undefined;
+}
 
 export async function handleCampaignRoutes(context: ApiRouteContext): Promise<Response | undefined> {
   const { request, url, path, parts, method, setCookie } = context;
@@ -153,6 +188,8 @@ if (method === "POST" && !parts[1]) {
   };
   if (!created.name || !Number.isFinite(created.target))
     return error("Campaign name and target are required.");
+  const imageError = await appendCampaignImages(created, input);
+  if (imageError) return imageError;
   store.campaigns.push(created);
   completeExpiredCampaigns();
   addAudit(`${user.firstName} ${user.lastName}`, "campaign.created", created.name, "Campaign");
@@ -171,6 +208,8 @@ if (method === "PATCH" && campaign) {
     isCampaignEndDateExpired(updatedEndDate)
   )
     return error("Update the campaign end date to a future date before activating it.", 422);
+  const imageError = await appendCampaignImages(campaign, input);
+  if (imageError) return imageError;
   Object.assign(campaign, input);
   completeExpiredCampaigns();
   addAudit(`${user.firstName} ${user.lastName}`, "campaign.updated", campaign.name, "Campaign");

@@ -46,6 +46,7 @@ export interface Campaign {
   status: CampaignStatus;
   joinCode: string;
   coverImageUrl?: string;
+  imageUrls?: string[];
   createdAt?: string;
 }
 export interface Participant {

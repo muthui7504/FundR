@@ -220,9 +220,11 @@ export const api = {
 
     findByCode: (code: string) => get<Campaign>(`/campaigns/code/${encodeURIComponent(code)}`),
 
-    create: (data: Partial<Campaign>) => post<Campaign>("/campaigns", data),
+    create: (data: Partial<Campaign> & { imageUploads?: string[] }) =>
+      post<Campaign>("/campaigns", data),
 
-    update: (id: string, data: Partial<Campaign>) => patch<Campaign>(`/campaigns/${id}`, data),
+    update: (id: string, data: Partial<Campaign> & { imageUploads?: string[] }) =>
+      patch<Campaign>(`/campaigns/${id}`, data),
 
     delete: (id: string) =>
       request<{ success: boolean }>(`/campaigns/${encodeURIComponent(id)}`, {

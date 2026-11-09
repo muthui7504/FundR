@@ -20,7 +20,7 @@ export interface Member {
 export interface Campaign {
   id: string; orgId: string; name: string; shortDescription: string; description: string;
   target: number; startDate: string; endDate: string; status: CampaignStatus; joinCode: string;
-  coverImageUrl?: string; createdAt?: string;
+  coverImageUrl?: string; imageUrls?: string[]; createdAt?: string;
 }
 export interface Participant { memberId: string; campaignId: string; status: ParticipantStatus; joinedAt: string; }
 export interface FundraisingProfile {

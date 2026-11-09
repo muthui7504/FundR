@@ -38,6 +38,7 @@ import {
 import { SkeletonList, SkeletonStats } from "@/components/loading-skeletons";
 import { RaisedAreaChart } from "@/components/charts";
 import { CampaignForm } from "@/components/campaigns/CampaignForm";
+import { ShareCampaignButton } from "@/components/campaigns/ShareCampaignButton";
 import { useDemo } from "@/context/DemoStore";
 import {
   effectiveParticipantStatus,
@@ -473,6 +474,9 @@ function Details() {
               <Pencil className="h-4 w-4" />
               Edit
             </Button>
+            {c.status === "ACTIVE" && (
+              <ShareCampaignButton campaignName={c.name} joinCode={c.joinCode} />
+            )}
             {isAdmin && (
               <Button
                 size="sm"

@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShareCampaignButton } from "@/components/campaigns/ShareCampaignButton";
 import {
   EmptyState,
   PageHeader,
@@ -305,21 +306,31 @@ function Overview() {
                 const campaignTotal = campaignRaised(campaign.id);
                 const progress = pct(campaignTotal, campaign.target);
                 return (
-                  <div key={campaign.id}>
+                  <div key={campaign.id} className="rounded-2xl border border-border/70 bg-background/70 p-3.5 sm:p-4">
                     <div className="flex items-center justify-between gap-3 text-sm">
                       <Link
                         to="/organisation/campaigns/$campaignId"
                         params={{ campaignId: campaign.id }}
-                        className="truncate font-medium hover:text-primary"
+                        className="min-w-0 truncate font-semibold hover:text-primary"
                       >
                         {campaign.name}
                       </Link>
-                      <span className="shrink-0 text-muted-foreground">{progress}%</span>
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                        {progress}%
+                      </span>
                     </div>
                     <ProgressBar value={progress} size="sm" className="mt-2" />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {formatKES(campaignTotal)} of {formatKES(campaign.target)}
-                    </p>
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        {formatKES(campaignTotal)} of {formatKES(campaign.target)}
+                      </p>
+                      {campaign.status === "ACTIVE" && (
+                        <ShareCampaignButton
+                          campaignName={campaign.name}
+                          joinCode={campaign.joinCode}
+                        />
+                      )}
+                    </div>
                   </div>
                 );
               })}

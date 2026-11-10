@@ -19,7 +19,7 @@ import {
   StatCard,
   StatusBadge,
 } from "@/components/kit";
-import { api } from "@/services/api";
+import { api, type CampaignMember } from "@/services/api";
 import { useDemo } from "@/context/DemoStore";
 import type { Campaign, Contribution, Member, Participant } from "@/types";
 import { formatDate, formatKES, pct } from "@/utils/format";
@@ -31,13 +31,14 @@ export const Route = createFileRoute("/organisation/reports")({
   component: Reports,
 });
 
-type ReportType = "summary" | "campaigns" | "contributions" | "members";
+type ReportType = "summary" | "campaigns" | "contributions" | "members" | "member";
 type ReportData = {
   organisation: { name: string };
   campaigns: Campaign[];
   members: Member[];
   participants: Participant[];
   contributions: Contribution[];
+  campaignMembers: CampaignMember[];
 };
 
 const reportOptions: { value: ReportType; label: string; description: string }[] = [
@@ -61,6 +62,11 @@ const reportOptions: { value: ReportType; label: string; description: string }[]
     label: "Member engagement",
     description: "Campaign participation and member contact details.",
   },
+  {
+    value: "member",
+    label: "Member fundraising & supporters",
+    description: "A selected member’s fundraising pages and their contributors.",
+  },
 ];
 
 const statusOrder = ["COMPLETED", "PENDING", "FAILED", "REVERSED", "REFUNDED"] as const;
@@ -74,6 +80,7 @@ function Reports() {
   const [startDate, setStartDate] = useState(localDateInputValue(thirtyDaysAgo));
   const [endDate, setEndDate] = useState(today);
   const [campaignId, setCampaignId] = useState("");
+  const [memberId, setMemberId] = useState("");
   const [reportType, setReportType] = useState<ReportType>("summary");
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,7 +91,10 @@ function Reports() {
     setErrorMessage("");
     try {
       const dashboard = await api.organisations.dashboard();
-      setData(dashboard);
+      const campaignMembers = (
+        await Promise.all(dashboard.campaigns.map((campaign) => api.campaigns.members(campaign.id)))
+      ).flat();
+      setData({ ...dashboard, campaignMembers });
       setCampaigns(dashboard.campaigns);
       setMembers(dashboard.members);
       setParticipants(dashboard.participants);
@@ -189,6 +199,43 @@ function Reports() {
       campaign: campaignsById.get(participant.campaignId),
     }))
     .sort((a, b) => b.participant.joinedAt.localeCompare(a.participant.joinedAt));
+  const reportMembers = useMemo(() => {
+    const profilesByMember = new Map<string, Member>();
+    for (const item of data?.campaignMembers ?? []) {
+      if ((!campaignId || item.participant.campaignId === campaignId) && item.profile)
+        profilesByMember.set(item.member.id, item.member);
+    }
+    return Array.from(profilesByMember.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [campaignId, data?.campaignMembers]);
+  const selectedMember = reportMembers.find((member) => member.id === memberId);
+  const selectedMemberPages = (data?.campaignMembers ?? []).filter(
+    (item) =>
+      item.member.id === memberId &&
+      item.profile &&
+      (!campaignId || item.participant.campaignId === campaignId),
+  );
+  const selectedProfileIds = new Set(
+    selectedMemberPages.map((item) => item.profile?.id).filter((id): id is string => Boolean(id)),
+  );
+  const memberContributions = (data?.contributions ?? [])
+    .filter(
+      (contribution) =>
+        selectedProfileIds.has(contribution.profileId) &&
+        isWithinDateRange(contribution.createdAt, startDate, endDate),
+    )
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const memberCompletedContributions = memberContributions.filter(
+    (contribution) => contribution.status === "COMPLETED",
+  );
+  const memberRaised = memberCompletedContributions.reduce(
+    (sum, contribution) => sum + contribution.amount,
+    0,
+  );
+  const memberSupporters = new Set(
+    memberCompletedContributions.map((contribution) =>
+      contribution.phone ? contribution.phone : contribution.supporterName || contribution.id,
+    ),
+  );
 
   const trend = useMemo(
     () => createTrend(scopedContributions, startDate, endDate),
@@ -264,6 +311,45 @@ function Reports() {
         ]),
       ];
     }
+    if (reportType === "member") {
+      const pagesById = new Map<string, CampaignMember>();
+      for (const item of selectedMemberPages) {
+        if (item.profile) pagesById.set(item.profile.id, item);
+      }
+      return [
+        ["Member fundraising report", "Value"],
+        ["Member", selectedMember?.name ?? "Select a member"],
+        ["Email", selectedMember?.email ?? ""],
+        ["Phone", selectedMember?.phone ?? ""],
+        ["Reporting period", periodLabel],
+        ["Campaign filter", campaignsById.get(campaignId)?.name ?? "All campaigns"],
+        ["Fundraising pages", selectedMemberPages.length],
+        ["Verified funds raised (KSh)", memberRaised],
+        ["Verified contributions", memberCompletedContributions.length],
+        ["Unique supporters", memberSupporters.size],
+        [],
+        [
+          "Fundraising page",
+          "Campaign",
+          "Supporter",
+          "Phone",
+          "Amount (KSh)",
+          "Status",
+          "Date",
+          "Receipt",
+        ],
+        ...memberContributions.map((contribution) => [
+          pagesById.get(contribution.profileId)?.profile?.title ?? "Unknown page",
+          campaignsById.get(contribution.campaignId)?.name ?? "Unknown campaign",
+          contribution.supporterName || "Anonymous supporter",
+          contribution.phone,
+          contribution.amount,
+          contribution.status,
+          formatDate(contribution.createdAt),
+          contribution.receipt ?? "",
+        ]),
+      ];
+    }
     return [
       ["Fundraising summary", "Value"],
       ["Organisation", organisationName],
@@ -288,7 +374,7 @@ function Reports() {
   };
 
   const downloadCsv = () => {
-    if (invalidRange || loading || !data) return;
+    if (invalidRange || loading || !data || (reportType === "member" && !selectedMember)) return;
     try {
       const content = `\uFEFF${toCsv(reportRows())}`;
       const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
@@ -307,7 +393,7 @@ function Reports() {
   };
 
   const printReport = () => {
-    if (invalidRange || loading || !data) return;
+    if (invalidRange || loading || !data || (reportType === "member" && !selectedMember)) return;
     const cleanup = () => document.body.classList.remove("reports-export");
     document.body.classList.add("reports-export");
     window.addEventListener("afterprint", cleanup, { once: true });
@@ -339,12 +425,15 @@ function Reports() {
               <Button
                 variant="outline"
                 onClick={printReport}
-                disabled={loading || !data || invalidRange}
+                disabled={loading || !data || invalidRange || (reportType === "member" && !selectedMember)}
               >
                 <Printer className="h-4 w-4" />
                 Print / save PDF
               </Button>
-              <Button onClick={downloadCsv} disabled={loading || !data || invalidRange}>
+              <Button
+                onClick={downloadCsv}
+                disabled={loading || !data || invalidRange || (reportType === "member" && !selectedMember)}
+              >
                 <Download className="h-4 w-4" />
                 Download CSV
               </Button>
@@ -395,7 +484,10 @@ function Reports() {
               <select
                 className="mt-1.5 h-11 w-full rounded-xl border bg-card px-3 text-sm"
                 value={campaignId}
-                onChange={(event) => setCampaignId(event.target.value)}
+                onChange={(event) => {
+                  setCampaignId(event.target.value);
+                  setMemberId("");
+                }}
               >
                 <option value="">All campaigns</option>
                 {campaigns.map((campaign) => (
@@ -405,6 +497,23 @@ function Reports() {
                 ))}
               </select>
             </label>
+            {reportType === "member" && (
+              <label className="text-sm font-medium">
+                Member
+                <select
+                  className="mt-1.5 h-11 w-full rounded-xl border bg-card px-3 text-sm"
+                  value={memberId}
+                  onChange={(event) => setMemberId(event.target.value)}
+                >
+                  <option value="">Select a member</option>
+                  {reportMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}{member.email ? ` · ${member.email}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="mr-1 text-xs text-muted-foreground">Quick range:</span>
@@ -480,6 +589,9 @@ function Reports() {
                   {campaignId
                     ? ` · ${campaignsById.get(campaignId)?.name ?? "Selected campaign"}`
                     : " · All campaigns"}
+                  {reportType === "member" && selectedMember
+                    ? ` · Member: ${selectedMember.name}`
+                    : ""}
                 </p>
               </div>
               <p className="hidden text-right text-xs text-muted-foreground sm:block">
@@ -732,6 +844,117 @@ function Reports() {
                 )}
               </div>
             </Panel>
+          )}
+          {reportType === "member" && (
+            <div className="space-y-5">
+              {!selectedMember ? (
+                <Panel>
+                  <EmptyState
+                    title="Select a member"
+                    description={
+                      reportMembers.length
+                        ? "Choose a member with a fundraising page to see their supporters and contributions."
+                        : "No members with fundraising pages match this campaign filter."
+                    }
+                    action={<Users className="size-5 text-muted-foreground" />}
+                  />
+                </Panel>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <StatCard
+                      label="Verified funds"
+                      value={formatKES(memberRaised)}
+                      hint="Completed contributions in period"
+                      icon={<BarChart3 className="size-5" />}
+                    />
+                    <StatCard
+                      label="Contributions"
+                      value={String(memberCompletedContributions.length)}
+                      hint="Verified gifts in period"
+                      icon={<FileSpreadsheet className="size-5" />}
+                      tone="info"
+                    />
+                    <StatCard
+                      label="Supporters"
+                      value={String(memberSupporters.size)}
+                      hint="Unique verified contributors"
+                      icon={<Users className="size-5" />}
+                      tone="muted"
+                    />
+                  </div>
+                  <Panel className="overflow-hidden">
+                    <ReportSectionTitle
+                      title={`${selectedMember.name} · supporters & contributions`}
+                      description={`${selectedMemberPages.length} fundraising ${selectedMemberPages.length === 1 ? "page" : "pages"} · ${memberContributions.length} payment ${memberContributions.length === 1 ? "record" : "records"} in the selected period`}
+                    />
+                    <div className="overflow-x-auto">
+                      {memberContributions.length ? (
+                        <table className="w-full min-w-[980px] text-left text-sm">
+                          <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
+                            <tr>
+                              {[
+                                "Fundraising page",
+                                "Campaign",
+                                "Supporter",
+                                "Phone",
+                                "Amount",
+                                "Status",
+                                "Date",
+                                "Receipt",
+                              ].map((heading) => (
+                                <th key={heading} className="p-3 sm:p-4">
+                                  {heading}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {memberContributions.map((contribution) => {
+                              const page = selectedMemberPages.find(
+                                (item) => item.profile?.id === contribution.profileId,
+                              )?.profile;
+                              return (
+                                <tr key={contribution.id}>
+                                  <td className="max-w-56 truncate p-3 font-medium sm:p-4">
+                                    {page?.title ?? "Unknown page"}
+                                  </td>
+                                  <td className="max-w-48 truncate p-3 sm:p-4">
+                                    {campaignsById.get(contribution.campaignId)?.name ??
+                                      "Unknown campaign"}
+                                  </td>
+                                  <td className="p-3 sm:p-4">
+                                    {contribution.supporterName || "Anonymous supporter"}
+                                  </td>
+                                  <td className="whitespace-nowrap p-3 sm:p-4">
+                                    {contribution.phone || "—"}
+                                  </td>
+                                  <td className="whitespace-nowrap p-3 font-semibold tabular-nums sm:p-4">
+                                    {formatKES(contribution.amount)}
+                                  </td>
+                                  <td className="p-3 sm:p-4">
+                                    <StatusBadge status={contribution.status} />
+                                  </td>
+                                  <td className="whitespace-nowrap p-3 sm:p-4">
+                                    {formatDate(contribution.createdAt)}
+                                  </td>
+                                  <td className="p-3 sm:p-4">{contribution.receipt || "—"}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <EmptyState
+                          title="No contributions in this period"
+                          description="This member has no payment records for their fundraising pages in the selected dates and campaign."
+                        />
+                      )}
+                    </div>
+                  </Panel>
+                </>
+              )}
+            </div>
           )}
           <p className="reports-screen-only mt-4 text-right text-xs text-muted-foreground">
             Prepared by FundR · {formatDate(new Date().toISOString())}

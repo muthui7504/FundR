@@ -853,6 +853,15 @@ export async function getCampaignMembershipOverview(campaign: Campaign) {
   );
   const maxMembers = activeTier.maxMembers;
   const activePlanConfigured = activeTier.code !== UNCONFIGURED_TIER.code;
+  const subscribedTier = subscription
+    ? findMembershipTier(subscription.planCode, store.plans)
+    : undefined;
+  const paidSubscriptionVerified = Boolean(
+    subscription?.verifiedAt &&
+      subscribedTier &&
+      subscribedTier.price !== null &&
+      subscribedTier.price > 0,
+  );
   return {
     campaignId: campaign.id,
     activeMemberCount,
@@ -877,7 +886,7 @@ export async function getCampaignMembershipOverview(campaign: Campaign) {
                   ? "FAILED"
                   : (subscription?.status ??
                     (activePlanConfigured ? "FREE" : "UNCONFIGURED")),
-    subscriptionExpiresAt: validSubscription && activePlanConfigured
+    subscriptionExpiresAt: paidSubscriptionVerified
       ? subscription.expiresAt.toISOString()
       : null,
     paymentVerified: Boolean(validSubscription && activePlanConfigured),

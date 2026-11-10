@@ -11,7 +11,7 @@ export type PayState = "ready" | "confirm" | "initiating" | "awaiting" | "pendin
 /** id of the form — the sticky bottom bar submits it with <button type="submit" form={CONTRIBUTE_FORM_ID}>. */
 export const CONTRIBUTE_FORM_ID = "contribute-form";
 
-const SUGGESTED = [100, 250, 500, 1000, 2500];
+const SUGGESTED = [250, 500, 1000, 2500, 5000];
 const PAYMENT_REQUEST_TIMEOUT_MS = 120_000;
 
 /** A contribution is successful only after the backend confirms the M-Pesa callback. */

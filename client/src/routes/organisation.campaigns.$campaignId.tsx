@@ -74,6 +74,22 @@ function formatPlanPrice(price: number | null) {
   return price === null || price === 0 ? "Free" : `${formatKES(price)}/month`;
 }
 
+function membershipExpiryStatus(status: string, expiresAt: string | null) {
+  if (!expiresAt || (status !== "ACTIVE" && status !== "EXPIRED")) return null;
+  const remainingMs = new Date(expiresAt).getTime() - Date.now();
+  if (remainingMs > 0) {
+    const daysRemaining = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+    return `Payment verified · ${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining to upgrade · expires ${formatDate(expiresAt)}`;
+  }
+  if (status === "EXPIRED") {
+    const daysExpired = Math.floor(-remainingMs / (24 * 60 * 60 * 1000));
+    return daysExpired === 0
+      ? `Plan expired today · upgrade to restore campaign capacity`
+      : `Plan expired ${daysExpired} day${daysExpired === 1 ? "" : "s"} ago · upgrade to restore campaign capacity`;
+  }
+  return `Plan expires today · upgrade to keep campaign capacity`;
+}
+
 function Details() {
   const { campaignId } = Route.useParams();
   const nav = useNavigate();
@@ -542,9 +558,17 @@ function Details() {
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {campaignMembership.subscriptionStatus === "ACTIVE"
-                  ? `Payment verified · renews ${campaignMembership.subscriptionExpiresAt ? formatDate(campaignMembership.subscriptionExpiresAt) : "not scheduled"}`
+                  ? membershipExpiryStatus(
+                      campaignMembership.subscriptionStatus,
+                      campaignMembership.subscriptionExpiresAt,
+                    ) ?? "Payment verified"
                   : campaignMembership.subscriptionStatus === "FREE"
                     ? "This campaign is on the Free plan. Other campaigns and organisation members are unaffected."
+                    : campaignMembership.subscriptionStatus === "EXPIRED"
+                      ? membershipExpiryStatus(
+                          campaignMembership.subscriptionStatus,
+                          campaignMembership.subscriptionExpiresAt,
+                        ) ?? "Plan expired · upgrade to restore campaign capacity."
                     : campaignMembership.subscriptionStatus === "UNCONFIGURED"
                       ? "No platform subscription plan is configured for this campaign."
                     : `Subscription status: ${campaignMembership.subscriptionStatus.toLowerCase().replace(/_/g, " ")}. Capacity increases after payment verification.`}

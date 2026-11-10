@@ -31,7 +31,13 @@ export const Route = createFileRoute("/organisation/reports")({
   component: Reports,
 });
 
-type ReportType = "summary" | "campaigns" | "contributions" | "members" | "member";
+type ReportType =
+  | "summary"
+  | "campaigns"
+  | "contributions"
+  | "members"
+  | "member"
+  | "member-supporters";
 type ReportData = {
   organisation: { name: string };
   campaigns: Campaign[];
@@ -66,6 +72,11 @@ const reportOptions: { value: ReportType; label: string; description: string }[]
     value: "member",
     label: "Member fundraising & supporters",
     description: "A selected member’s fundraising pages and their contributors.",
+  },
+  {
+    value: "member-supporters",
+    label: "All members & supporters",
+    description: "Every member with their fundraising supporters listed underneath.",
   },
 ];
 
@@ -236,6 +247,87 @@ function Reports() {
       contribution.phone ? contribution.phone : contribution.supporterName || contribution.id,
     ),
   );
+  const memberSupporterGroups = useMemo(() => {
+    const campaignMemberIds = new Set(
+      (data?.participants ?? [])
+        .filter((participant) => !campaignId || participant.campaignId === campaignId)
+        .map((participant) => participant.memberId),
+    );
+    for (const item of data?.campaignMembers ?? []) {
+      if (!campaignId || item.participant.campaignId === campaignId)
+        campaignMemberIds.add(item.member.id);
+    }
+    const profilesByMember = new Map<string, Set<string>>();
+    const memberByProfileId = new Map<string, string>();
+    for (const item of data?.campaignMembers ?? []) {
+      if ((!campaignId || item.participant.campaignId === campaignId) && item.profile) {
+        const profileIds = profilesByMember.get(item.member.id) ?? new Set<string>();
+        profileIds.add(item.profile.id);
+        profilesByMember.set(item.member.id, profileIds);
+        memberByProfileId.set(item.profile.id, item.member.id);
+      }
+    }
+    const contributionsByMember = new Map<string, Contribution[]>();
+    for (const member of data?.members ?? []) contributionsByMember.set(member.id, []);
+    for (const contribution of data?.contributions ?? []) {
+      const memberId = memberByProfileId.get(contribution.profileId);
+      if (
+        memberId &&
+        (!campaignId || contribution.campaignId === campaignId) &&
+        isWithinDateRange(contribution.createdAt, startDate, endDate)
+      ) {
+        contributionsByMember.get(memberId)?.push(contribution);
+      }
+    }
+
+    return (data?.members ?? [])
+      .filter((member) => !campaignId || campaignMemberIds.has(member.id))
+      .map((member) => {
+        const profileIds = profilesByMember.get(member.id) ?? new Set<string>();
+        const contributions = (contributionsByMember.get(member.id) ?? []).sort((a, b) =>
+          b.createdAt.localeCompare(a.createdAt),
+        );
+        const completedContributions = contributions.filter(
+          (contribution) => contribution.status === "COMPLETED",
+        );
+        const supporters = new Set(
+          completedContributions.map((contribution) =>
+            contribution.phone
+              ? contribution.phone
+              : contribution.supporterName || contribution.id,
+          ),
+        );
+        return {
+          member,
+          contributions,
+          completedContributions,
+          supporters,
+          raised: completedContributions.reduce((sum, contribution) => sum + contribution.amount, 0),
+          pageCount: profileIds.size,
+        };
+      })
+      .sort((a, b) => a.member.name.localeCompare(b.member.name));
+  }, [
+    campaignId,
+    data?.campaignMembers,
+    data?.contributions,
+    data?.members,
+    data?.participants,
+    endDate,
+    startDate,
+  ]);
+  const allMemberRaised = memberSupporterGroups.reduce((sum, group) => sum + group.raised, 0);
+  const allMemberContributions = memberSupporterGroups.reduce(
+    (sum, group) => sum + group.contributions.length,
+    0,
+  );
+  const allMemberSupporters = new Set(
+    memberSupporterGroups.flatMap((group) =>
+      group.completedContributions.map((contribution) =>
+        contribution.phone ? contribution.phone : contribution.supporterName || contribution.id,
+      ),
+    ),
+  );
 
   const trend = useMemo(
     () => createTrend(scopedContributions, startDate, endDate),
@@ -340,6 +432,51 @@ function Reports() {
           formatDate(contribution.createdAt),
           contribution.receipt ?? "",
         ]),
+      ];
+    }
+    if (reportType === "member-supporters") {
+      return [
+        [
+          "Member",
+          "Member email",
+          "Member phone",
+          "Member status",
+          "Supporter",
+          "Supporter phone",
+          "Amount (KSh)",
+          "Payment status",
+          "Date",
+          "Receipt",
+        ],
+        ...memberSupporterGroups.flatMap((group) =>
+          group.contributions.length
+            ? group.contributions.map((contribution) => [
+                group.member.name,
+                group.member.email,
+                group.member.phone,
+                group.member.status,
+                contribution.supporterName || "Anonymous supporter",
+                contribution.phone,
+                contribution.amount,
+                contribution.status,
+                formatDate(contribution.createdAt),
+                contribution.receipt ?? "",
+              ])
+            : [
+                [
+                  group.member.name,
+                  group.member.email,
+                  group.member.phone,
+                  group.member.status,
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                ],
+              ],
+        ),
       ];
     }
     return [
@@ -837,6 +974,129 @@ function Reports() {
               </div>
             </Panel>
           )}
+
+          {reportType === "member-supporters" && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatCard
+                  label="Members"
+                  value={String(memberSupporterGroups.length)}
+                  hint="In the selected organisation or campaign"
+                  icon={<Users className="size-5" />}
+                />
+                <StatCard
+                  label="Verified funds"
+                  value={formatKES(allMemberRaised)}
+                  hint="Completed contributions in period"
+                  icon={<BarChart3 className="size-5" />}
+                />
+                <StatCard
+                  label="Payment records"
+                  value={String(allMemberContributions)}
+                  hint="Across all listed member pages"
+                  icon={<FileSpreadsheet className="size-5" />}
+                  tone="info"
+                />
+                <StatCard
+                  label="Unique supporters"
+                  value={String(allMemberSupporters.size)}
+                  hint="Verified supporters across members"
+                  icon={<Users className="size-5" />}
+                  tone="muted"
+                />
+              </div>
+              <Panel className="overflow-hidden">
+                <ReportSectionTitle
+                  title="Members and their supporters"
+                  description="Each organisation member is listed, with payment records from their fundraising pages nested below. Members with no contributions are included."
+                />
+                {memberSupporterGroups.length ? (
+                  <div className="space-y-4 p-4 sm:p-5">
+                    {memberSupporterGroups.map((group) => (
+                      <section
+                        key={group.member.id}
+                        className="overflow-hidden rounded-2xl border bg-card"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3 border-b bg-muted/20 p-4">
+                          <div className="min-w-0">
+                            <h4 className="font-semibold">{group.member.name}</h4>
+                            <p className="mt-1 break-all text-xs text-muted-foreground">
+                              {[group.member.email, group.member.phone].filter(Boolean).join(" · ") ||
+                                "No contact details"}
+                            </p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <StatusBadge status={group.member.status} />
+                              <span className="text-xs text-muted-foreground">
+                                {group.pageCount} fundraising{" "}
+                                {group.pageCount === 1 ? "page" : "pages"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <p className="font-semibold tabular-nums">{formatKES(group.raised)}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {group.supporters.size} verified{" "}
+                              {group.supporters.size === 1 ? "supporter" : "supporters"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                          {group.contributions.length ? (
+                            <table className="w-full min-w-[660px] text-left text-sm">
+                              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                                <tr>
+                                  {["Supporter", "Phone", "Amount", "Status", "Date", "Receipt"].map(
+                                    (heading) => (
+                                      <th key={heading} className="p-3 sm:p-4">
+                                        {heading}
+                                      </th>
+                                    ),
+                                  )}
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {group.contributions.map((contribution) => (
+                                  <tr key={contribution.id}>
+                                    <td className="p-3 sm:p-4">
+                                      {contribution.supporterName || "Anonymous supporter"}
+                                    </td>
+                                    <td className="whitespace-nowrap p-3 sm:p-4">
+                                      {contribution.phone || "—"}
+                                    </td>
+                                    <td className="whitespace-nowrap p-3 font-semibold tabular-nums sm:p-4">
+                                      {formatKES(contribution.amount)}
+                                    </td>
+                                    <td className="p-3 sm:p-4">
+                                      <StatusBadge status={contribution.status} />
+                                    </td>
+                                    <td className="whitespace-nowrap p-3 sm:p-4">
+                                      {formatDate(contribution.createdAt)}
+                                    </td>
+                                    <td className="p-3 sm:p-4">{contribution.receipt || "—"}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <p className="px-4 py-5 text-sm text-muted-foreground">
+                              No contributions in this period.
+                            </p>
+                          )}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    title="No members found"
+                    description="No members match the selected campaign."
+                    action={<Users className="size-5 text-muted-foreground" />}
+                  />
+                )}
+              </Panel>
+            </div>
+          )}
+
           {reportType === "member" && (
             <div className="space-y-5">
               {!selectedMember ? (

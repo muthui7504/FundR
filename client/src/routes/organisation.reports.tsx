@@ -312,10 +312,6 @@ function Reports() {
       ];
     }
     if (reportType === "member") {
-      const pagesById = new Map<string, CampaignMember>();
-      for (const item of selectedMemberPages) {
-        if (item.profile) pagesById.set(item.profile.id, item);
-      }
       return [
         ["Member fundraising report", "Value"],
         ["Member", selectedMember?.name ?? "Select a member"],
@@ -329,8 +325,6 @@ function Reports() {
         ["Unique supporters", memberSupporters.size],
         [],
         [
-          "Fundraising page",
-          "Campaign",
           "Supporter",
           "Phone",
           "Amount (KSh)",
@@ -339,8 +333,6 @@ function Reports() {
           "Receipt",
         ],
         ...memberContributions.map((contribution) => [
-          pagesById.get(contribution.profileId)?.profile?.title ?? "Unknown page",
-          campaignsById.get(contribution.campaignId)?.name ?? "Unknown campaign",
           contribution.supporterName || "Anonymous supporter",
           contribution.phone,
           contribution.amount,
@@ -890,12 +882,10 @@ function Reports() {
                     />
                     <div className="overflow-x-auto">
                       {memberContributions.length ? (
-                        <table className="w-full min-w-[980px] text-left text-sm">
+                        <table className="w-full min-w-[760px] text-left text-sm">
                           <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
                             <tr>
                               {[
-                                "Fundraising page",
-                                "Campaign",
                                 "Supporter",
                                 "Phone",
                                 "Amount",
@@ -911,18 +901,8 @@ function Reports() {
                           </thead>
                           <tbody className="divide-y">
                             {memberContributions.map((contribution) => {
-                              const page = selectedMemberPages.find(
-                                (item) => item.profile?.id === contribution.profileId,
-                              )?.profile;
                               return (
                                 <tr key={contribution.id}>
-                                  <td className="max-w-56 truncate p-3 font-medium sm:p-4">
-                                    {page?.title ?? "Unknown page"}
-                                  </td>
-                                  <td className="max-w-48 truncate p-3 sm:p-4">
-                                    {campaignsById.get(contribution.campaignId)?.name ??
-                                      "Unknown campaign"}
-                                  </td>
                                   <td className="p-3 sm:p-4">
                                     {contribution.supporterName || "Anonymous supporter"}
                                   </td>

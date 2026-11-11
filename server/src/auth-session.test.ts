@@ -80,6 +80,22 @@ test("member login sessions last 30 days while administrator sessions remain 30 
       30 * 60 * 1000,
     );
     assert.equal(sessionDurationForRole("PLATFORM_ADMIN"), 30 * 60 * 1000);
+
+    const logoutRequest = new Request("http://localhost/api/auth/logout", {
+      method: "POST",
+      headers: { cookie: `fundraise_session=${sessionIds[0]}` },
+    });
+    const logoutResponse = await handleAuthRoutes({
+      request: logoutRequest,
+      url: new URL(logoutRequest.url),
+      path: "auth/logout",
+      parts: ["auth", "logout"],
+      method: "POST",
+      setCookie: () => "",
+    });
+    assert.equal(logoutResponse?.status, 200);
+    assert.equal(sessions.has(sessionIds[0]), false);
+    assert.match(logoutResponse.headers.get("set-cookie") ?? "", /Max-Age=0/);
   } finally {
     store.users = previousUsers;
     for (const sessionId of sessionIds) sessions.delete(sessionId);

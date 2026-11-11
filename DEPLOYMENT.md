@@ -38,6 +38,14 @@ In Render, create a Blueprint from the GitHub repository and select the root
 The API sends verification mail through Brevo's HTTPS API. Render's free tier
 blocks outbound SMTP ports, so SMTP credentials will not work there.
 
+For durable fundraising image storage, create a private Cloudflare R2 bucket
+and an S3 API token scoped to that bucket. Add `R2_ACCOUNT_ID`,
+`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET` to the Render
+service's environment settings. Do not send these credentials in chat or add
+them to GitHub. Images are streamed through the API, so the bucket does not
+need public access. Until all four values are configured, image uploads use the
+API's local filesystem and may be lost when the free service restarts.
+
 The blueprint runs Prisma client generation and database migrations during
 build, starts the Express API, and checks `/health`. After deploy, copy the
 service's HTTPS URL, for example `https://fundraise-api.onrender.com`.
@@ -61,11 +69,11 @@ build before it is available in the login bundle.
 
 ## Limitations to address before production
 
-- Render Free services can spin down and have an ephemeral filesystem. Uploaded
-  fundraising images are currently stored on the API filesystem and may be lost
-  after a restart or spin-down. Move image storage to durable object storage
-  before depending on those uploads.
-- API sessions are held in memory, so a service restart signs users out.
+- Render Free services can spin down, causing cold starts. The API now persists
+  sessions in PostgreSQL so restarts do not sign users out before sessions
+  expire.
+- Configure the R2 environment variables above before relying on uploaded
+  images; without them, images remain on Render's ephemeral filesystem.
 - Free-tier quotas, cold starts, and resource limits can interrupt use. Test
   login, registration/email verification, campaign creation, image uploads, and
   payment callbacks before sharing the preview.

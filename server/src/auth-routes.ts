@@ -1,4 +1,4 @@
-import { addAudit, authError, body, error, id, isOrgUser, json, numberValue, publicUser, readCookies, requireUser, sessionDurationForRole, sessions, store, stringValue, userFromRequest, type ApiRouteContext, type DemoUser } from "./api-context";
+import { addAudit, authError, body, createSession, deleteSession, error, id, isOrgUser, json, numberValue, publicUser, readCookies, requireUser, sessionDurationForRole, store, stringValue, userFromRequest, type ApiRouteContext, type DemoUser } from "./api-context";
 import type { AuditEvent, Campaign, Contribution, FundraisingProfile, Member, MpesaAccount, Organisation, Plan, Participant, Pledge, Subscription } from "./types";
 import { isStrongPassword, strongPasswordMessage } from "./password-rules";
 import { databaseEnabled } from "./api-context";
@@ -154,7 +154,7 @@ const password = stringValue(input.password);
   if (localUserIndex < 0) store.users.push(user);
   else store.users[localUserIndex] = user;
   const sessionId = crypto.randomUUID();
-  sessions.set(sessionId, { userId: user.id, expiresAt: Date.now() + sessionDurationForRole(user.role) });
+  await createSession(sessionId, user, Date.now() + sessionDurationForRole(user.role));
 return json({ success: true, data: { user: publicUser(user) } }, 200, {
   "set-cookie": setCookie(sessionId, user.role),
 });
@@ -256,7 +256,7 @@ return json({ success: true, data: { user: publicUser(user) } }, 200, {
     if (localUserIndex < 0) store.users.push(safeUser);
     else store.users[localUserIndex] = safeUser;
     const sessionId = crypto.randomUUID();
-    sessions.set(sessionId, { userId: safeUser.id, expiresAt: Date.now() + sessionDurationForRole(safeUser.role) });
+    await createSession(sessionId, safeUser, Date.now() + sessionDurationForRole(safeUser.role));
     return json({ success: true, data: { user: publicUser(safeUser) } }, 200, {
       "set-cookie": setCookie(sessionId, safeUser.role),
     });
@@ -427,7 +427,7 @@ return json({ success: true, data: { user: publicUser(user) } }, 200, {
     }
     await prisma.emailVerification.deleteMany({ where: { id: verification.id } });
     const sessionId = crypto.randomUUID();
-    sessions.set(sessionId, { userId: user.id, expiresAt: Date.now() + sessionDurationForRole(user.role) });
+    await createSession(sessionId, user, Date.now() + sessionDurationForRole(user.role));
     return json({ success: true, data: { user: publicUser(user) } }, 201, {
       "set-cookie": setCookie(sessionId, user.role),
     });
@@ -441,7 +441,7 @@ return user
   }
   if (method === "POST" && path === "auth/logout") {
 const sessionId = readCookies(request).fundraise_session;
-if (sessionId) sessions.delete(sessionId);
+if (sessionId) await deleteSession(sessionId);
 return json({ success: true }, 200, {
   "set-cookie": "fundraise_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0",
 });

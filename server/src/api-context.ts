@@ -154,6 +154,41 @@ export async function ensureDatabase() {
       const { bootstrapMembershipRecords } =
         await import("./membership-service");
       await bootstrapMembershipRecords();
+      const now = new Date();
+      const persistedUsers = await prisma.appUser.findMany({
+        select: {
+          id: true,
+          email: true,
+          password: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          orgId: true,
+          memberId: true,
+        },
+      });
+      const usersById = new Map(store.users.map((user) => [user.id, user]));
+      for (const user of persistedUsers) {
+        usersById.set(user.id, {
+          ...user,
+          role: user.role as DemoUser["role"],
+          orgId: user.orgId ?? undefined,
+          memberId: user.memberId ?? undefined,
+        });
+      }
+      store.users = Array.from(usersById.values());
+      await prisma.session.deleteMany({ where: { expiresAt: { lte: now } } });
+      const persistedSessions = await prisma.session.findMany({
+        where: { expiresAt: { gt: now } },
+        select: { id: true, userId: true, expiresAt: true },
+      });
+      sessions.clear();
+      for (const session of persistedSessions) {
+        sessions.set(session.id, {
+          userId: session.userId,
+          expiresAt: session.expiresAt.getTime(),
+        });
+      }
     })().catch((cause) => {
       databaseReady = undefined;
       throw new Error(
@@ -172,6 +207,27 @@ export async function persistStore() {
     create: { key: "main", data },
     update: { data },
   });
+}
+
+export async function createSession(
+  sessionId: string,
+  user: DemoUser,
+  expiresAt: number,
+) {
+  const session = { userId: user.id, expiresAt };
+  if (databaseEnabled) {
+    await prisma.session.create({
+      data: { id: sessionId, userId: user.id, expiresAt: new Date(expiresAt) },
+    });
+  }
+  sessions.set(sessionId, session);
+}
+
+export async function deleteSession(sessionId: string) {
+  if (databaseEnabled) {
+    await prisma.session.deleteMany({ where: { id: sessionId } });
+  }
+  sessions.delete(sessionId);
 }
 
 export function json(data: unknown, status = 200, headers: HeadersInit = {}) {

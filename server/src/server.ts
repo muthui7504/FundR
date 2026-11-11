@@ -8,9 +8,11 @@ import {
 import { compatibilityApi } from "./compat-server";
 import { errorHandler } from "./middleware/errorHandler";
 import { notFound } from "./middleware/notFound";
+import { profileImageStorageMode } from "./profile-image-storage";
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
+const imageStorage = profileImageStorageMode();
 
 app.use(
   express.json({
@@ -39,4 +41,8 @@ campaignCompletionInterval.unref();
 
 app.listen(port, () => {
   console.log(`FundR API listening on port ${port}`);
+  if (imageStorage !== "R2")
+    console.warn(
+      "R2 is not configured; fundraising images are using the local filesystem and may not survive a restart.",
+    );
 });

@@ -5,7 +5,7 @@
     "dev": "concurrently --kill-others-on-fail \"npm run api:dev\" \"npm run client:dev\"",
     "client:dev": "npm --prefix ../client run dev",
     "build": "npm --prefix ../client run build",
-    "test": "tsx --test src/membership-tiers.test.ts src/contribution-status.test.ts src/daraja-client.test.ts src/stripe-client.test.ts src/platform-payment.test.ts src/kenyan-phone.test.ts src/campaign-routes.test.ts src/organisation-permissions.test.ts src/auth-session.test.ts src/email-service.test.ts",
+    "test": "tsx --test src/membership-tiers.test.ts src/contribution-status.test.ts src/daraja-client.test.ts src/stripe-client.test.ts src/platform-payment.test.ts src/kenyan-phone.test.ts src/campaign-routes.test.ts src/organisation-permissions.test.ts src/auth-session.test.ts src/email-service.test.ts src/profile-image-storage.test.ts",
     "api": "tsx src/server.ts",
     "api:dev": "tsx watch src/server.ts",
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
@@ -14,6 +14,7 @@
     "test:integration": "tsx --test src/membership-postgres.integration.test.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1166.0",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.4.7",
@@ -29,5 +30,8 @@
     "concurrently": "^9.2.1",
     "prisma": "^6.19.3",
     "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

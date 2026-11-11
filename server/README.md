@@ -29,6 +29,10 @@ npm run api
 
 The server listens on `PORT` (default `3001`).
 
+Authenticated sessions are stored in the PostgreSQL `Session` table and reloaded
+when the API starts, so a process restart does not sign users out before their
+session expires.
+
 The platform administrator can select M-Pesa (Daraja) or card (Stripe) for
 campaign subscription checkout in **Platform admin → Payment configuration**.
 Credentials saved there are encrypted at rest; set a persistent
@@ -113,9 +117,13 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Keep this key backed up and do not rotate it without decrypting and re-encrypting saved
 credentials. Losing it makes stored M-Pesa credentials unreadable.
 
-Fundraising profile images are stored on disk in `uploads/fundraising-profiles`. Keep this
-directory on persistent storage and include it in backups so uploaded images remain
-available after server restarts or deployments.
+Fundraising images use Cloudflare R2 when all of these API environment variables
+are set: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
+`R2_BUCKET`. Create an R2 bucket and a scoped S3 API token with read/write access
+to that bucket; keep the bucket private because the API serves the images. Until
+R2 is configured, images use the local `uploads/fundraising-profiles` directory,
+which is suitable for development but may not survive a Render restart or
+deployment.
 
 ## Endpoints
 
